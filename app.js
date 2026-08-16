@@ -377,19 +377,36 @@
      MUSIC — IndexedDB store for audio blobs
      ========================================================= */
   const viewMusic = $("view-music");
-  const musicLibrary = $("musicLibrary");
-  const musicCollection = $("musicCollection");
-  const ORIGINAL_LIBRARY = musicLibrary.innerHTML;
-  const collectionCards = $("collectionCards");
-  const recentSec = $("recentSec");
-  const recentList = $("recentList");
-  const allList = $("allList");
+  const musicPlayer = $("musicPlayer");
+  const musicArt = $("musicArt");
+  const musicArtImg = musicArt.querySelector(".music__artimg");
+  const musicArtIcon = musicArt.querySelector(".music__articon");
+  const musicTitle = $("musicTitle");
+  const musicArtist = $("musicArtist");
+  const musicBar = $("musicBar");
+  const musicFill = $("musicFill");
+  const musicKnob = $("musicKnob");
+  const musicCur = $("musicCur");
+  const musicDur = $("musicDur");
+  const musicPlay = $("musicPlay");
+  const musicPlayIcon = $("musicPlayIcon");
+  const musicPrev = $("musicPrev");
+  const musicNext = $("musicNext");
+  const musicShuffle = $("musicShuffle");
+  const musicRepeat = $("musicRepeat");
+  const musicVolBtn = $("musicVolBtn");
+  const musicVolume = $("musicVolume");
+  const musicVolInput = musicVolume.querySelector(".music__vol");
+  const musicBackBar = $("musicBackBar");
+  const musicChips = $("musicChips");
+  const musicList = $("musicList");
   const colEyebrow = $("colEyebrow");
   const colTitle = $("colTitle");
   const colSub = $("colSub");
-  const colList = $("colList");
-  const addMusicBtn = $("addMusicBtn");
   const addToCollectionBtn = $("addToCollectionBtn");
+  const addMusicBtn = $("addMusicBtn");
+  const musicBack = $("musicBack");
+  const colMore = $("colMore");
   const musicFileInput = $("musicFileInput");
   const musicFolderInput = $("musicFolderInput");
   const artworkInput = $("artworkInput");
@@ -509,70 +526,70 @@
   }
 
   function renderLibrary() {
+    showLibrary();
+  }
+
+  function showLibrary() {
+    currentColId = null;
+    musicBackBar.hidden = true;
+    musicChips.hidden = false;
+    addToCollectionBtn.hidden = true;
+    renderMusicList(state.music, true);
+  }
+
+  function renderMusicList(tracks, showChips) {
     if (state.music.length === 0) {
-      musicLibrary.innerHTML = `
-        <div class="page-head">
-          <div>
-            <p class="eyebrow">Your sounds</p>
-            <h1 class="page-title">Music</h1>
-          </div>
-        </div>
-        <div class="empty" style="margin-top:var(--sp-7)">
-          <p class="empty__title">Your library is empty</p>
-          <p class="empty__text">Add your first song and start building your collection.</p>
+      musicChips.hidden = true;
+      musicList.innerHTML = `
+        <div class="music__empty">
+          <div class="empty__title">Your library is empty</div>
+          <div class="empty__text">Add your first song to start listening.</div>
           <button class="btn btn--primary empty__btn" id="emptyAddMusic2">Add music</button>
         </div>`;
       const b = $("emptyAddMusic2");
       if (b) b.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
       return;
     }
-    if (!$("collectionCards")) musicLibrary.innerHTML = ORIGINAL_LIBRARY;
+    musicList.innerHTML = tracks.length
+      ? tracks.map(trackRowHTML).join("")
+      : `<div class="note__statustext" style="padding:var(--sp-4);color:var(--text-2)">No songs in this collection yet.</div>`;
 
-    collectionCards.innerHTML = state.collections.map((c) => {
-      const n = state.music.filter((t) => t.collections.includes(c.id)).length;
-      return `<button class="card" data-col="${c.id}">
-        <div class="card__art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></div>
-        <div class="card__name">${escapeHtml(c.name)}</div>
-        <div class="card__meta">${n} ${n === 1 ? "song" : "songs"}</div>
-      </button>`;
-    }).join("") || `<div class="card__meta" style="padding:var(--sp-2)">No collections yet — add music to create one.</div>`;
-
-    const recent = state.recentlyPlayed.map((id) => state.music.find((t) => t.id === id)).filter(Boolean).slice(0, 8);
-    if (recent.length) { recentSec.style.display = ""; recentList.innerHTML = recent.map(trackRowHTML).join(""); }
-    else recentSec.style.display = "none";
-
-    allList.innerHTML = state.music.map(trackRowHTML).join("");
+    if (showChips) {
+      const items = [{ id: null, name: "All" }].concat(state.collections);
+      musicChips.innerHTML = items.map((c) => {
+        const active = !c.id || currentColId === c.id;
+        const n = c.id ? state.music.filter((t) => t.collections.includes(c.id)).length : state.music.length;
+        const label = c.id ? escapeHtml(c.name) : "All";
+        return `<button class="chip ${active ? "is-active" : ""}" data-col="${c.id === null ? "" : c.id}" aria-label="${label} (${n})">
+          <span class="chip__label">${label}</span><span class="chip__count">${n}</span>
+        </button>`;
+      }).join("");
+    }
   }
 
   function openCollection(id) {
     const c = state.collections.find((x) => x.id === id);
     if (!c) { showLibrary(); return; }
     currentColId = id;
-    musicLibrary.hidden = true;
-    musicCollection.hidden = false;
+    musicBackBar.hidden = false;
+    musicChips.hidden = true;
+    addToCollectionBtn.hidden = false;
     colEyebrow.textContent = "Collection";
     colTitle.textContent = c.name;
     const tracks = state.music.filter((t) => t.collections.includes(id));
     colSub.textContent = tracks.length + " " + (tracks.length === 1 ? "song" : "songs");
-    if (tracks.length) colList.innerHTML = tracks.map(trackRowHTML).join("");
-    else colList.innerHTML = `<div class="card__meta" style="padding:var(--sp-4)">No songs in this collection yet. Use “Add music” above.</div>`;
-  }
-  function showLibrary() {
-    currentColId = null;
-    musicCollection.hidden = true;
-    musicLibrary.hidden = false;
-    renderLibrary();
+    renderMusicList(tracks, false);
   }
 
   /* ---- view interactions ---- */
-  $("musicBack").addEventListener("click", showLibrary);
+  musicBack.addEventListener("click", showLibrary);
   viewMusic.addEventListener("click", (e) => {
     const more = e.target.closest(".track__more");
     const track = e.target.closest(".track");
-    const card = e.target.closest(".card");
+    const chip = e.target.closest(".chip");
     if (more && track) { e.stopPropagation(); openTrackMenu(track.dataset.id, more); return; }
     if (track) { const id = track.dataset.id; if (id === currentId) togglePlay(); else playTrack(id); return; }
-    if (card) { openCollection(card.dataset.col); }
+    if (chip && chip.dataset.col != null) openCollection(chip.dataset.col);
   });
 
   /* ---- add music flow ---- */
@@ -884,6 +901,46 @@
     audio.volume = parseFloat($("fullVol").value); audio.muted = false; state.volume = audio.volume; save();
   });
 
+  /* ---- inline mobile player ---- */
+  function prevTrack() { if (audio.currentTime > 3) { audio.currentTime = 0; } else step(-1); }
+  function nextTrack() { step(1); }
+  musicPrev.addEventListener("click", prevTrack);
+  musicNext.addEventListener("click", nextTrack);
+  musicPlay.addEventListener("click", togglePlay);
+  musicArt.addEventListener("click", openFull);
+  musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
+  musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
+  musicVolBtn.addEventListener("click", () => {
+    musicVolume.hidden = !musicVolume.hidden;
+    musicVolBtn.setAttribute("aria-expanded", String(!musicVolume.hidden));
+    if (!musicVolume.hidden) musicVolInput.focus();
+  });
+  musicVolInput.addEventListener("input", () => {
+    audio.volume = parseFloat(musicVolInput.value); audio.muted = false; state.volume = audio.volume; save();
+  });
+  document.addEventListener("click", (e) => {
+    if (!musicVolume.contains(e.target) && e.target !== musicVolBtn) musicVolume.hidden = true;
+  });
+
+  let mpSeeking = false;
+  musicBar.addEventListener("pointerdown", (e) => { mpSeeking = true; musicBar.setPointerCapture(e.pointerId); mpSeek(e); });
+  musicBar.addEventListener("pointermove", (e) => { if (mpSeeking) mpSeek(e); });
+  musicBar.addEventListener("pointerup", () => { mpSeeking = false; });
+  musicBar.addEventListener("keydown", (e) => {
+    if (!isFinite(audio.duration)) return;
+    if (e.key === "ArrowRight") { audio.currentTime = Math.min(audio.duration, audio.currentTime + 5); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { audio.currentTime = Math.max(0, audio.currentTime - 5); e.preventDefault(); }
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); togglePlay(); }
+  });
+  function mpSeek(e) {
+    if (isFinite(audio.duration) && audio.duration) {
+      const ratio = Math.min(1, Math.max(0, (e.clientX - musicBar.getBoundingClientRect().left) / musicBar.offsetWidth));
+      audio.currentTime = ratio * audio.duration;
+      musicFill.style.width = (ratio * 100) + "%";
+      musicKnob.style.left = (ratio * 100) + "%";
+    }
+  }
+
   function openFull() {
     if (!currentId) return;
     full.hidden = false;
@@ -923,11 +980,15 @@
     fullFill.style.width = (ratio * 100) + "%";
     fullKnob.style.left = (ratio * 100) + "%";
     miniBarFill.style.width = (ratio * 100) + "%";
+    if (!mpSeeking) { musicFill.style.width = (ratio * 100) + "%"; musicKnob.style.left = (ratio * 100) + "%"; }
     fullCur.textContent = fmtTime(audio.currentTime);
+    musicCur.textContent = fmtTime(audio.currentTime);
     fullBar.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
+    musicBar.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
   });
   audio.addEventListener("loadedmetadata", () => {
     fullDur.textContent = fmtTime(audio.duration);
+    musicDur.textContent = fmtTime(audio.duration);
     if (pendingSeekId && pendingSeekId === currentId && pendingSeekTime > 2 && pendingSeekTime < (audio.duration || 0) - 2) {
       audio.currentTime = pendingSeekTime;
     }
@@ -955,8 +1016,14 @@
     miniSub.textContent = sub;
     fullTitle.textContent = t ? t.name : "—";
     fullSub.textContent = sub;
+    musicTitle.textContent = t ? t.name : "—";
+    musicArtist.textContent = sub;
+    musicShuffle.classList.toggle("is-on", state.shuffle);
+    musicRepeat.classList.toggle("is-on", state.repeat);
+    musicPlayer.hidden = !currentId;
     setIcon(miniPlayIcon, isPlaying);
     setIcon(fullPlayIcon, isPlaying);
+    setIcon(musicPlayIcon, isPlaying);
     updateTrackStates();
     updatePlayerArt();
     updateMiniVisibility();
@@ -964,8 +1031,13 @@
   function updatePlayerArt() {
     const t = state.music.find((x) => x.id === currentId);
     const has = !!(t && t.artwork);
-    if (miniArtImg) { miniArtImg.src = has ? t.artwork : ""; miniArtImg.hidden = !has; miniArtIcon.style.display = has ? "none" : ""; }
-    if (fullArtImg) { fullArtImg.src = has ? t.artwork : ""; fullArtImg.hidden = !has; fullArtIcon.style.display = has ? "none" : ""; }
+    const refs = [
+      [miniArtImg, miniArtIcon], [fullArtImg, fullArtIcon], [musicArtImg, musicArtIcon]
+    ];
+    refs.forEach(([img, icon]) => {
+      if (!img || !icon) return;
+      img.src = has ? t.artwork : ""; img.hidden = !has; icon.style.display = has ? "none" : "";
+    });
   }
   function updateArtDisplay(t) {
     if (!t) return;
@@ -996,6 +1068,7 @@
     });
   }
   function updateMiniVisibility() {
+    if (currentView === "music") { mini.classList.add("is-hidden"); setTimeout(() => { if (mini.classList.contains("is-hidden")) mini.hidden = true; }, 320); return; }
     if (currentId) { mini.hidden = false; requestAnimationFrame(() => mini.classList.remove("is-hidden")); }
     else { mini.classList.add("is-hidden"); setTimeout(() => { if (mini.classList.contains("is-hidden")) mini.hidden = true; }, 320); }
   }
@@ -1147,8 +1220,9 @@
     });
     setHeader(view);
     if (view === "note") loadNote();
-    if (view === "music") { if (currentColId) showLibrary(); else renderLibrary(); }
+    if (view === "music") { if (currentColId) showLibrary(); else renderLibrary(); updateUI(); }
     if (view === "habits") renderHabits();
+    updateMiniVisibility();
     positionIndicator();
   }
 

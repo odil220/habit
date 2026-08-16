@@ -140,38 +140,72 @@
 
       <!-- ---------- MUSIC ---------- -->
       <section class="view view--music" id="view-music" aria-label="Music" hidden>
-        <div id="musicLibrary">
-          <div class="page-head">
-            <div>
-              <p class="eyebrow">Your sounds</p>
-              <h1 class="page-title">Music</h1>
+        <!-- Header -->
+        <div class="music__head page-head">
+          <div>
+            <p class="eyebrow">Your sounds</p>
+            <h1 class="page-title">Music</h1>
+          </div>
+          <button class="btn-add btn-add--sm" id="addMusicBtn">
+            <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+            Add
+          </button>
+        </div>
+
+        <!-- Inline now-playing player (mobile-first) -->
+        <div class="music__player" id="musicPlayer" hidden>
+          <button class="music__art" id="musicArt" aria-label="Open player">
+            <img class="music__artimg" alt="" hidden />
+            <svg class="music__articon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
+          </button>
+          <div class="music__meta">
+            <div class="music__title" id="musicTitle">—</div>
+            <div class="music__artist" id="musicArtist">Nothing playing</div>
+          </div>
+          <div class="music__timebar">
+            <span class="music__cur" id="musicCur">0:00</span>
+            <div class="music__bar" id="musicBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+              <div class="music__track"></div>
+              <div class="music__fill" id="musicFill"></div>
+              <div class="music__knob" id="musicKnob"></div>
             </div>
-            <button class="btn-add" id="addMusicBtn">
-              <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-              Add music
+            <span class="music__dur" id="musicDur">0:00</span>
+          </div>
+          <div class="music__controls">
+            <button class="music__ctrl" id="musicShuffle" aria-label="Shuffle">
+              <svg viewBox="0 0 24 24"><path d="M4 5h3l3 4M16 5h4v4M4 19h4v-4M16 19h4l-4-4M14 9l3 3-3 3"/></svg>
+            </button>
+            <button class="music__ctrl" id="musicPrev" aria-label="Previous track">
+              <svg viewBox="0 0 24 24"><path d="M7 5v14M19 5L9 12l10 7z"/></svg>
+            </button>
+            <button class="music__play" id="musicPlay" aria-label="Play">
+              <svg id="musicPlayIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
+            </button>
+            <button class="music__ctrl" id="musicNext" aria-label="Next track">
+              <svg viewBox="0 0 24 24"><path d="M17 5v14M5 5l10 7-10 7z"/></svg>
+            </button>
+            <button class="music__ctrl" id="musicRepeat" aria-label="Repeat">
+              <svg viewBox="0 0 24 24"><path d="M7 8a4 4 0 0 1 4-4h6M17 16a4 4 0 0 1-4 4H7M17 4l2 2-2 2M7 20l-2-2 2-2"/></svg>
             </button>
           </div>
-          <div class="sec">
-            <h2 class="sec__title">Your collections</h2>
-            <div class="cards" id="collectionCards"></div>
-          </div>
-          <div class="sec" id="recentSec">
-            <h2 class="sec__title">Recently played</h2>
-            <div class="tracklist" id="recentList"></div>
-          </div>
-          <div class="sec">
-            <h2 class="sec__title">All music</h2>
-            <div class="tracklist" id="allList"></div>
+          <div class="music__volrow">
+            <button class="music__ctrl" id="musicVolBtn" aria-label="Volume" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 24 24"><path d="M4 5v14h4l5 4V1L4 5z"/><path d="M15.5 8a4.5 4.5 0 0 1 0 8M17.7 5.7A7 7 0 0 1 20 12a7 7 0 0 1-2.3 6.3"/></svg>
+            </button>
+            <div class="music__volume" id="musicVolume" hidden>
+              <input type="range" class="music__vol" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+            </div>
           </div>
         </div>
 
-        <div id="musicCollection" hidden>
-          <button class="back" id="musicBack">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-            Music
-          </button>
-          <div class="page-head">
-            <div>
+        <!-- Library -->
+        <div class="music__library">
+          <div class="music__backbar" id="musicBackBar" hidden>
+            <button class="back" id="musicBack">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+              Music
+            </button>
+            <div class="music__backhead">
               <p class="eyebrow" id="colEyebrow">Collection</p>
               <h1 class="page-title" id="colTitle">Classic</h1>
               <p class="page-sub" id="colSub">12 songs</p>
@@ -180,11 +214,13 @@
               <svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/></svg>
             </button>
           </div>
-          <button class="btn-add btn-add--block" id="addToCollectionBtn">
+
+          <div class="music__chips" id="musicChips"></div>
+          <div class="music__list" id="musicList"></div>
+          <button class="btn-add btn-add--block" id="addToCollectionBtn" hidden>
             <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
             Add music
           </button>
-          <div class="tracklist" id="colList"></div>
         </div>
       </section>
 
