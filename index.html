@@ -24,6 +24,7 @@
   <!-- PWA / installable -->
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <!-- iOS standalone -->
@@ -213,7 +214,8 @@
   <div class="mini" id="mini" hidden>
     <div class="mini__bar"><i id="miniBarFill"></i></div>
     <button class="mini__art" id="miniArt" aria-label="Open player">
-      <svg viewBox="0 0 24 24"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
+      <img class="mini__artimg" alt="" hidden />
+      <svg class="mini__articon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
     </button>
     <div class="mini__info">
       <div class="mini__title" id="miniTitle">—</div>
@@ -240,7 +242,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="full__art" id="fullArt">
-        <svg viewBox="0 0 24 24"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
+        <img class="full__artimg" alt="" hidden />
+        <svg class="full__articon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
       </div>
       <div class="full__title" id="fullTitle">—</div>
       <div class="full__sub" id="fullSub">—</div>
@@ -274,9 +277,13 @@
   <!-- ============ ADD SHEET ============ -->
   <div class="sheet" id="addSheet" hidden>
     <div class="sheet__scrim" data-close-sheet></div>
-    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Add to collection">
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Add music">
       <div class="sheet__grab"></div>
       <h2 class="sheet__title" id="addSheetTitle">Add to collection</h2>
+      <div class="details" id="addDetails" hidden>
+        <p class="details__hint">Name your tracks and add artwork (optional).</p>
+        <div class="details__list" id="addDetailsList"></div>
+      </div>
       <div class="targets" id="addTargets"></div>
       <div class="newcol" id="newColWrap" hidden>
         <input id="newColInput" placeholder="Collection name" maxlength="40" autocomplete="off" />
@@ -284,6 +291,10 @@
           <button class="btn btn--ghost" id="newColCancel">Cancel</button>
           <button class="btn btn--primary" id="newColCreate">Create</button>
         </div>
+      </div>
+      <div class="sheet__nav">
+        <button class="btn btn--ghost" id="addSheetBack">Back</button>
+        <button class="btn btn--primary" id="addSheetConfirm">Done</button>
       </div>
     </div>
   </div>
@@ -308,6 +319,7 @@
 
   <!-- ============ HIDDEN FILE INPUTS ============ -->
   <input type="file" id="avatarInput" accept="image/*" hidden />
+  <input type="file" id="artworkInput" accept="image/*" hidden />
   <input type="file" id="musicFileInput" accept="audio/*" multiple hidden />
   <input type="file" id="musicFolderInput" accept="audio/*" webkitdirectory directory multiple hidden />
 

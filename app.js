@@ -392,6 +392,12 @@
   const addToCollectionBtn = $("addToCollectionBtn");
   const musicFileInput = $("musicFileInput");
   const musicFolderInput = $("musicFolderInput");
+  const artworkInput = $("artworkInput");
+
+  const miniArtImg = $("miniArt").querySelector(".mini__artimg");
+  const miniArtIcon = $("miniArt").querySelector(".mini__articon");
+  const fullArtImg = $("fullArt").querySelector(".full__artimg");
+  const fullArtIcon = $("fullArt").querySelector(".full__articon");
 
   const audio = new Audio();
   audio.volume = state.volume;
@@ -402,6 +408,9 @@
   let isPlaying = false;
   let currentColId = null;
   let pendingDeleteTrack = null;
+  let pendingFiles = [];
+  let sheetMode = "files";
+  let sheetTrackId = null;
 
   /* --- tiny IndexedDB wrapper --- */
   let _db = null;
@@ -477,7 +486,7 @@
   }
 
   function trackRowHTML(t) {
-    const num = "";
+    const hasArt = !!(t.artwork);
     return `
       <div class="track ${t.id === currentId ? "is-active" : ""}" data-id="${t.id}">
         <button class="track__play" aria-label="Play ${escapeHtml(t.name)}">
@@ -485,6 +494,9 @@
             ? '<span class="eq" aria-hidden="true"><span></span><span></span><span></span></span>'
             : '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>'}
         </button>
+        ${hasArt
+          ? '<span class="track__art" aria-hidden="true"><img src="' + escapeHtml(t.artwork) + '" alt="" loading="lazy" /><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></span>'
+          : '<span class="track__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></span>'}
         <div class="track__info">
           <div class="track__title">${escapeHtml(t.name)}</div>
           <div class="track__sub">${escapeHtml(t.file)}${t.duration ? " · " + fmtTime(t.duration) : ""}</div>
@@ -581,38 +593,123 @@
   musicFileInput.addEventListener("change", () => { handleSelectedFiles(musicFileInput.files); musicFileInput.value = ""; });
   musicFolderInput.addEventListener("change", () => { handleSelectedFiles(musicFolderInput.files); musicFolderInput.value = ""; });
 
+  let trackArtTarget = null;
+  artworkInput.addEventListener("change", async () => {
+    const file = artworkInput.files && artworkInput.files[0];
+    artworkInput.value = "";
+    if (!file) return;
+    try {
+      const dataUrl = await downscaleImage(file, 320);
+      if (trackArtTarget) {
+        trackArtTarget.artwork = dataUrl;
+        save(); updateArtDisplay(trackArtTarget); updatePlayerArt();
+        showToast("Artwork updated", "OK", () => {});
+        trackArtTarget = null;
+      } else {
+        const i = parseInt(artworkInput.dataset.idx, 10);
+        if (pendingFiles[i]) {
+          pendingFiles[i].artwork = dataUrl;
+          const row = sheetDetailsList.querySelector(".drow[data-i='" + i + "']");
+          if (row) {
+            const img = row.querySelector(".drow__artimg");
+            const icon = row.querySelector(".drow__articon");
+            if (img && icon) { img.src = dataUrl; img.hidden = false; icon.style.display = "none"; row.querySelector(".drow__art").classList.add("has-art"); }
+          }
+        }
+      }
+    } catch (err) {
+      showToast("Couldn't load that image", "OK", () => {});
+    }
+  });
+
   function handleSelectedFiles(fileList) {
     const files = Array.from(fileList || []).filter(isAudio);
     if (!files.length) { showToast("No audio files found", "OK", () => {}); return; }
-    if (addContext === "library") {
-      openAddSheet("files", files);
-    } else {
-      Promise.all(files.map((f) => createTrack(f, addContext))).then(() => {
-        save(); afterMusicChange(); showToast(files.length + (files.length === 1 ? " song" : " songs") + " added", "OK", () => {});
-      });
-    }
+    openAddSheet("files", files);
   }
 
-  async function createTrack(file, colId) {
+  async function createTrack(file, colId, artwork, name) {
     const id = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const url = URL.createObjectURL(file);
     urls[id] = url; blobs[id] = file;
     const duration = await getDuration(url);
-    const track = { id, name: cleanName(file.name), file: file.name, duration, collections: colId ? [colId] : [] };
+    const track = { id, name: name || cleanName(file.name), file: file.name, duration, collections: colId ? [colId] : [], artwork: artwork || "" };
     state.music.push(track);
-    try { await idbPut({ id, name: file.name, type: file.type, blob: file }); } catch (e) {}
+    try { await idbPut({ id, name: file.name, type: file.type, blob: file, artwork: artwork || "" }); } catch (e) {}
     return track;
   }
 
   function openAddSheet(mode, files, trackId) {
     const sheet = $("addSheet");
-    const targets = $("addTargets");
-    const newWrap = $("newColWrap");
-    newWrap.hidden = true;
+    sheetMode = mode;
+    sheetTrackId = trackId;
+    if (mode === "files" && files && files.length) {
+      pendingFiles = files.map((f) => ({ file: f, name: cleanName(f.name), artwork: "" }));
+      renderDetailsStep();
+    } else {
+      pendingFiles = [];
+      showTargets();
+    }
     $("newColInput").value = "";
-    $("addSheetTitle").textContent = mode === "track" ? "Add to collection" : "Add " + (files ? files.length : "") + " to collection";
+    sheet.hidden = false;
+    requestAnimationFrame(() => sheet.classList.add("is-open"));
+  }
+
+  function renderDetailsStep() {
+    sheetDetails.hidden = false;
+    sheetTargets.hidden = true;
+    sheetNewCol.hidden = true;
+    sheetTitle.textContent = "Add music";
+    sheetConfirm.textContent = "Next";
+    sheetConfirm.onclick = () => {
+      if (addContext === "library") { showTargets(); }
+      else { closeSheet($("addSheet")); applyTarget("files"); }
+    };
+    sheetBack.textContent = "Cancel";
+    sheetBack.onclick = () => closeSheet($("addSheet"));
+
+    sheetDetailsList.innerHTML = pendingFiles.map((pf, i) => `
+      <div class="drow" data-i="${i}">
+        <div class="drow__name" title="${escapeHtml(pf.file.name)}">${escapeHtml(pf.file.name)}</div>
+        <input class="drow__rename" type="text" value="${escapeHtml(pf.name)}" maxlength="60" placeholder="Track name" autocomplete="off" />
+        <button class="drow__art ic" type="button" aria-label="Add artwork for ${escapeHtml(pf.name)}" data-i="${i}">
+          <img class="drow__artimg" alt="" hidden />
+          <svg class="drow__articon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4.5-4.5 3.5 3.5L16 9l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><circle cx="9" cy="8" r="1.6"/></svg>
+        </button>
+      </div>`).join("");
+
+    sheetDetailsList.querySelectorAll(".drow__rename").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const i = parseInt(inp.closest(".drow").dataset.i, 10);
+        const nm = inp.value.trim();
+        pendingFiles[i].name = nm || cleanName(pendingFiles[i].file.name);
+      });
+    });
+    sheetDetailsList.querySelectorAll(".drow__art").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const i = parseInt(btn.dataset.i, 10);
+        artworkInput.dataset.idx = i;
+        artworkInput.click();
+      });
+    });
+  }
+
+  function showTargets() {
+    sheetDetails.hidden = true;
+    sheetTargets.hidden = false;
+    sheetNewCol.hidden = true;
+    sheetTitle.textContent = "Add to collection";
+    sheetConfirm.textContent = "Done";
+    sheetConfirm.onclick = () => {
+      if (sheetMode === "files") { closeSheet($("addSheet")); applyTarget("files", null, null, null); }
+      else { closeSheet($("addSheet")); }
+    };
+    sheetBack.textContent = "Back";
+    sheetBack.onclick = () => { if (sheetMode === "files") renderDetailsStep(); else closeSheet($("addSheet")); };
+
     const targetList = [{ id: null, name: "Library" }].concat(state.collections);
-    targets.innerHTML = targetList.map((c) => `
+    sheetTargets.innerHTML = targetList.map((c) => `
       <button class="target" data-col="${c.id === null ? "" : c.id}">
         <span class="target__dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></span>
         <span>${c.id === null ? "Library" : escapeHtml(c.name)}</span>
@@ -623,12 +720,12 @@
         <span>Create new collection</span>
       </button>`;
 
-    targets.querySelectorAll(".target").forEach((b) => {
+    sheetTargets.querySelectorAll(".target").forEach((b) => {
       b.addEventListener("click", () => {
-        if (b.dataset.new) { newWrap.hidden = false; targets.hidden = true; $("newColInput").focus(); return; }
+        if (b.dataset.new) { sheetNewCol.hidden = false; sheetTargets.hidden = true; $("newColInput").focus(); return; }
         const colId = b.dataset.col || null;
-        applyTarget(mode, files, trackId, colId);
-        closeSheet(sheet);
+        applyTarget(sheetMode, null, sheetTrackId, colId);
+        closeSheet($("addSheet"));
       });
     });
     $("newColCreate").onclick = () => {
@@ -637,20 +734,17 @@
       const col = { id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name };
       state.collections.push(col);
       save();
-      applyTarget(mode, files, trackId, col.id);
-      closeSheet(sheet);
+      applyTarget(sheetMode, null, sheetTrackId, col.id);
+      closeSheet($("addSheet"));
     };
-    $("newColCancel").onclick = () => { newWrap.hidden = true; targets.hidden = false; };
-
-    sheet.hidden = false;
-    requestAnimationFrame(() => sheet.classList.add("is-open"));
+    $("newColCancel").onclick = () => { sheetNewCol.hidden = true; sheetTargets.hidden = false; };
   }
 
   function applyTarget(mode, files, trackId, colId) {
     if (mode === "files") {
-      Promise.all((files || []).map((f) => createTrack(f, colId))).then(() => {
+      Promise.all(pendingFiles.map((pf) => createTrack(pf.file, colId, pf.artwork, pf.name))).then(() => {
         save(); afterMusicChange();
-        showToast((files.length) + (files.length === 1 ? " song" : " songs") + " added", "OK", () => {});
+        showToast(pendingFiles.length + (pendingFiles.length === 1 ? " song" : " songs") + " added", "OK", () => {});
       });
     } else if (mode === "track" && trackId) {
       const t = state.music.find((x) => x.id === trackId);
@@ -673,8 +767,10 @@
 
   /* ---- track menu ---- */
   function openTrackMenu(id, anchor) {
+    const t = state.music.find((x) => x.id === id);
     const items = [
       { label: id === currentId && isPlaying ? "Pause" : "Play", icon: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>', onSelect: () => { if (id === currentId) togglePlay(); else playTrack(id); } },
+      { label: t && t.artwork ? "Change artwork" : "Set artwork", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4.5-4.5 3.5 3.5L16 9l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><circle cx="9" cy="8" r="1.6"/></svg>', onSelect: () => { if (t) { trackArtTarget = t; artworkInput.click(); } } },
       { label: "Add to collection", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>', onSelect: () => openAddSheet("track", null, id) },
       { label: "Remove", danger: true, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M6.5 7l.7 12h9.6l.7-12"/></svg>', onSelect: () => removeTrack(id) },
     ];
@@ -724,6 +820,14 @@
   const fullCur = $("fullCur");
   const fullDur = $("fullDur");
   const fullPlayIcon = $("fullPlayIcon");
+
+  const sheetTitle = $("addSheetTitle");
+  const sheetDetails = $("addDetails");
+  const sheetDetailsList = $("addDetailsList");
+  const sheetTargets = $("addTargets");
+  const sheetNewCol = $("newColWrap");
+  const sheetConfirm = $("addSheetConfirm");
+  const sheetBack = $("addSheetBack");
 
   let pendingSeekId = null, pendingSeekTime = 0;
 
@@ -786,6 +890,7 @@
     requestAnimationFrame(() => full.classList.add("is-open"));
     $("fullShuffle").classList.toggle("is-on", state.shuffle);
     $("fullRepeat").classList.toggle("is-on", state.repeat);
+    updatePlayerArt();
   }
   function closeFull() {
     full.classList.remove("is-open");
@@ -838,16 +943,41 @@
     step(1);
   });
 
+  function trackSub(t) {
+    if (!t) return "Nothing playing";
+    const cols = (t.collections || []).map((cid) => state.collections.find((c) => c.id === cid)).filter(Boolean);
+    return cols.length ? cols.map((c) => c.name).join(", ") : (t.file || "Unknown artist");
+  }
   function updateUI() {
     const t = state.music.find((x) => x.id === currentId);
+    const sub = trackSub(t);
     miniTitle.textContent = t ? t.name : "—";
-    miniSub.textContent = t ? t.file : "Nothing playing";
+    miniSub.textContent = sub;
     fullTitle.textContent = t ? t.name : "—";
-    fullSub.textContent = t ? t.file : "Nothing playing";
+    fullSub.textContent = sub;
     setIcon(miniPlayIcon, isPlaying);
     setIcon(fullPlayIcon, isPlaying);
     updateTrackStates();
+    updatePlayerArt();
     updateMiniVisibility();
+  }
+  function updatePlayerArt() {
+    const t = state.music.find((x) => x.id === currentId);
+    const has = !!(t && t.artwork);
+    if (miniArtImg) { miniArtImg.src = has ? t.artwork : ""; miniArtImg.hidden = !has; miniArtIcon.style.display = has ? "none" : ""; }
+    if (fullArtImg) { fullArtImg.src = has ? t.artwork : ""; fullArtImg.hidden = !has; fullArtIcon.style.display = has ? "none" : ""; }
+  }
+  function updateArtDisplay(t) {
+    if (!t) return;
+    const rows = viewMusic.querySelectorAll(".track[data-id='" + t.id + "']");
+    rows.forEach((row) => {
+      const img = row.querySelector(".track__artimg");
+      const svg = row.querySelector(".track__art svg");
+      if (img && svg) {
+        if (t.artwork) { img.src = t.artwork; img.hidden = false; svg.style.display = "none"; }
+        else { img.hidden = true; svg.style.display = ""; }
+      }
+    });
   }
   function setIcon(el, playing) {
     el.innerHTML = playing
