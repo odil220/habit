@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-accent="cool">
+<html lang="en" data-theme="light" data-accent="warm">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f7f9fc" />
+  <meta name="theme-color" content="#f6ecea" />
 
   <!-- Early theme: avoid flash of wrong theme before app.js runs -->
   <script>
@@ -11,12 +11,12 @@
       try {
         var s = JSON.parse(localStorage.getItem("ordinary.v1") || "{}");
         var theme = s.theme || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        var accent = s.accent || "cool";
+        var accent = s.accent || "warm";
         var d = document.documentElement;
         d.setAttribute("data-theme", theme);
         d.setAttribute("data-accent", accent);
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", theme === "dark" ? "#0e1116" : "#f7f9fc");
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#2a0800" : "#f6ecea");
       } catch (e) {}
     })();
   </script>
@@ -51,12 +51,7 @@
           <p class="eyebrow" id="eyebrow">Saturday, August 15</p>
           <h1 class="title" id="title">Today's Habits</h1>
         </div>
-
         <div class="topbar__controls">
-          <div class="seg" role="group" aria-label="Accent color">
-            <button class="seg__dot seg__dot--warm" data-set-accent="warm" title="Warm accent" aria-label="Warm mocha accent"></button>
-            <button class="seg__dot seg__dot--cool" data-set-accent="cool" title="Cool accent" aria-label="Cool blue accent"></button>
-          </div>
           <button class="iconbtn" id="themeToggle" aria-label="Toggle light and dark theme">
             <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4.2"/>
@@ -144,49 +139,51 @@
 
       <!-- ---------- MUSIC ---------- -->
       <section class="view view--music" id="view-music" aria-label="Music" hidden>
-        <div class="music__head">
-          <button class="addmusic" id="addMusicBtn" aria-haspopup="true">
-            <span class="addmusic__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        <div id="musicLibrary">
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Your sounds</p>
+              <h1 class="page-title">Music</h1>
+            </div>
+            <button class="btn-add" id="addMusicBtn">
+              <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+              Add music
+            </button>
+          </div>
+          <div class="sec">
+            <h2 class="sec__title">Your collections</h2>
+            <div class="cards" id="collectionCards"></div>
+          </div>
+          <div class="sec" id="recentSec">
+            <h2 class="sec__title">Recently played</h2>
+            <div class="tracklist" id="recentList"></div>
+          </div>
+          <div class="sec">
+            <h2 class="sec__title">All music</h2>
+            <div class="tracklist" id="allList"></div>
+          </div>
+        </div>
+
+        <div id="musicCollection" hidden>
+          <button class="back" id="musicBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            Music
+          </button>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow" id="colEyebrow">Collection</p>
+              <h1 class="page-title" id="colTitle">Classic</h1>
+              <p class="page-sub" id="colSub">12 songs</p>
+            </div>
+            <button class="iconbtn-sm" id="colMore" aria-label="Collection options">
+              <svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/></svg>
+            </button>
+          </div>
+          <button class="btn-add btn-add--block" id="addToCollectionBtn">
+            <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
             Add music
           </button>
-        </div>
-        <div class="tracklist" id="trackList"></div>
-
-        <!-- sticky player -->
-        <div class="player is-hidden" id="player" hidden>
-          <div class="player__meta">
-            <div class="player__art" id="playerArt">
-              <svg viewBox="0 0 24 24"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
-            </div>
-            <div class="player__info">
-              <div class="player__title" id="playerTitle">—</div>
-              <div class="player__sub" id="playerSub">Nothing playing</div>
-            </div>
-          </div>
-          <div class="player__bar" id="playerBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-            <div class="player__track"></div>
-            <div class="player__fill" id="playerFill"></div>
-            <div class="player__knob" id="playerKnob"></div>
-          </div>
-          <div class="player__times">
-            <span id="curTime">0:00</span>
-            <span id="durTime">0:00</span>
-          </div>
-          <div class="player__controls">
-            <button class="pctrl" id="prevBtn" aria-label="Previous track">
-              <svg viewBox="0 0 24 24"><path d="M7 5v14M19 5L9 12l10 7z"/></svg>
-            </button>
-            <button class="pctrl pctrl--play" id="playBtn" aria-label="Play">
-              <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
-            </button>
-            <button class="pctrl" id="nextBtn" aria-label="Next track">
-              <svg viewBox="0 0 24 24"><path d="M17 5v14M5 5l10 7-10 7z"/></svg>
-            </button>
-            <button class="pctrl pctrl--vol" id="volBtn" aria-label="Mute">
-              <svg id="volIcon" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a4 4 0 0 1 0 7M18.5 6a7 7 0 0 1 0 12"/></svg>
-            </button>
-          </div>
-          <input type="range" class="player__vol" id="volRange" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+          <div class="tracklist" id="colList"></div>
         </div>
       </section>
 
@@ -212,6 +209,97 @@
     </nav>
   </div>
 
+  <!-- ============ MINI PLAYER (global) ============ -->
+  <div class="mini" id="mini" hidden>
+    <div class="mini__bar"><i id="miniBarFill"></i></div>
+    <button class="mini__art" id="miniArt" aria-label="Open player">
+      <svg viewBox="0 0 24 24"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
+    </button>
+    <div class="mini__info">
+      <div class="mini__title" id="miniTitle">—</div>
+      <div class="mini__sub" id="miniSub">Nothing playing</div>
+    </div>
+    <div class="mini__controls">
+      <button class="mini__btn" id="miniPrev" aria-label="Previous track">
+        <svg viewBox="0 0 24 24"><path d="M7 5v14M19 5L9 12l10 7z"/></svg>
+      </button>
+      <button class="mini__btn mini__btn--play" id="miniPlay" aria-label="Play">
+        <svg id="miniPlayIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
+      </button>
+      <button class="mini__btn" id="miniNext" aria-label="Next track">
+        <svg viewBox="0 0 24 24"><path d="M17 5v14M5 5l10 7-10 7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ FULL PLAYER ============ -->
+  <div class="full" id="full" hidden>
+    <div class="full__scrim" id="fullClose"></div>
+    <div class="full__panel" role="dialog" aria-modal="true" aria-label="Now playing">
+      <button class="full__close" id="fullMin" aria-label="Minimize player">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="full__art" id="fullArt">
+        <svg viewBox="0 0 24 24"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
+      </div>
+      <div class="full__title" id="fullTitle">—</div>
+      <div class="full__sub" id="fullSub">—</div>
+      <div class="full__bar" id="fullBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <div class="full__track"></div>
+        <div class="full__fill" id="fullFill"></div>
+        <div class="full__knob" id="fullKnob"></div>
+      </div>
+      <div class="full__times"><span id="fullCur">0:00</span><span id="fullDur">0:00</span></div>
+      <div class="full__controls">
+        <button class="full__ctrl" id="fullShuffle" aria-label="Shuffle">
+          <svg viewBox="0 0 24 24"><path d="M4 5h3l3 4M16 5h4v4M4 19h4v-4M16 19h4l-4-4M14 9l3 3-3 3"/></svg>
+        </button>
+        <button class="full__ctrl" id="fullPrev" aria-label="Previous track">
+          <svg viewBox="0 0 24 24"><path d="M7 5v14M19 5L9 12l10 7z"/></svg>
+        </button>
+        <button class="full__ctrl full__play" id="fullPlay" aria-label="Play">
+          <svg id="fullPlayIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
+        </button>
+        <button class="full__ctrl" id="fullNext" aria-label="Next track">
+          <svg viewBox="0 0 24 24"><path d="M17 5v14M5 5l10 7-10 7z"/></svg>
+        </button>
+        <button class="full__ctrl" id="fullRepeat" aria-label="Repeat">
+          <svg viewBox="0 0 24 24"><path d="M7 8a4 4 0 0 1 4-4h6M17 16a4 4 0 0 1-4 4H7M17 4l2 2-2 2M7 20l-2-2 2-2"/></svg>
+        </button>
+      </div>
+      <input type="range" class="full__vol" id="fullVol" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+    </div>
+  </div>
+
+  <!-- ============ ADD SHEET ============ -->
+  <div class="sheet" id="addSheet" hidden>
+    <div class="sheet__scrim" data-close-sheet></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Add to collection">
+      <div class="sheet__grab"></div>
+      <h2 class="sheet__title" id="addSheetTitle">Add to collection</h2>
+      <div class="targets" id="addTargets"></div>
+      <div class="newcol" id="newColWrap" hidden>
+        <input id="newColInput" placeholder="Collection name" maxlength="40" autocomplete="off" />
+        <div class="newcol__row">
+          <button class="btn btn--ghost" id="newColCancel">Cancel</button>
+          <button class="btn btn--primary" id="newColCreate">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM DIALOG ============ -->
+  <div class="dialog" id="confirm" hidden>
+    <div class="dialog__scrim" id="confirmScrim"></div>
+    <div class="dialog__box" role="dialog" aria-modal="true">
+      <p class="dialog__text" id="confirmText">Are you sure?</p>
+      <div class="dialog__row">
+        <button class="btn btn--ghost" id="confirmCancel">Cancel</button>
+        <button class="btn btn--danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ TOAST ============ -->
   <div class="toast" id="toast" role="status" aria-live="polite" hidden>
     <span class="toast__text" id="toastText">Habit deleted</span>
@@ -220,7 +308,8 @@
 
   <!-- ============ HIDDEN FILE INPUTS ============ -->
   <input type="file" id="avatarInput" accept="image/*" hidden />
-  <input type="file" id="musicInput" accept="audio/*" multiple hidden />
+  <input type="file" id="musicFileInput" accept="audio/*" multiple hidden />
+  <input type="file" id="musicFolderInput" accept="audio/*" webkitdirectory directory multiple hidden />
 
   <script src="app.js"></script>
 </body>
