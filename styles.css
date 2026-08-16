@@ -1082,6 +1082,9 @@ body.is-typing .toast {
   overflow: hidden; box-shadow: var(--shadow-sm);
   transition: opacity var(--dur-fast) var(--ease);
 }
+@media (min-width: 414px) {
+  .music__art { width: min(78%, 320px); }
+}
 .music__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .music__art svg { width: 56px; height: 56px; fill: none; stroke: currentColor; stroke-width: 1.4; opacity: 0.85; }
 .music__meta { margin-bottom: var(--sp-4); }
@@ -1102,14 +1105,14 @@ body.is-typing .toast {
 
 /* controls */
 .music__controls { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: var(--sp-4); flex-wrap: wrap; }
-.music__ctrl { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text-2); display: grid; place-items: center; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.music__ctrl { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text-2); display: grid; place-items: center; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .music__ctrl:hover { background: var(--surface-2); color: var(--text); }
 .music__ctrl:active { transform: scale(0.9); }
 .music__ctrl.is-on { color: var(--accent-strong); }
 .music__ctrl svg { width: 19px; height: 19px; fill: currentColor; }
-.music__play { width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
+.music__play { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
 .music__play:hover { background: var(--accent-strong); }
-.music__play svg { width: 24px; height: 24px; }
+.music__play svg { width: 26px; height: 26px; }
   .music__volrow { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-3); }
   .music__volume { display: inline-block; }
   .music__vol { width: 100%; max-width: 140px; -webkit-appearance: none; appearance: none; height: 4px; border-radius: var(--r-pill); background: var(--track); outline: none; }
