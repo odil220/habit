@@ -1124,11 +1124,6 @@ body.is-typing .toast {
 .music__play { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
 .music__play:hover { background: var(--accent-strong); }
 .music__play svg { width: 26px; height: 26px; }
-  .music__volrow { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-3); }
-  .music__volume { display: inline-block; }
-  .music__vol { width: 100%; max-width: 140px; -webkit-appearance: none; appearance: none; height: 4px; border-radius: var(--r-pill); background: var(--track); outline: none; }
-.music__vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; }
-.music__vol::-moz-range-thumb { width: 12px; height: 12px; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
 
 /* library: chips + list */
 .music__library { width: 100%; margin-top: var(--sp-3); }
@@ -1172,3 +1167,61 @@ body.is-typing .toast {
 @media (prefers-reduced-motion: reduce) {
   .music__art, .music__bar, .music__controls { transition: none; }
 }
+
+/* ============ SOUND PAGE ============ */
+.view--sound { min-height: calc(100dvh - env(safe-area-invisible-top)); }
+.sound__stage {
+  max-width: 414px; margin: 0 auto;
+  padding: calc(48px + env(safe-area-inset-top)) var(--sp-4) calc(var(--sp-9) + env(safe-area-inset-bottom) + 60px);
+}
+.sound__group + .sound__group { margin-top: var(--sp-5); }
+.sound__label { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--sp-2); }
+
+.segmented {
+  display: inline-flex; flex-wrap: wrap; gap: 2px; background: var(--surface-2);
+  border-radius: var(--r-full); padding: 3px; border: 1px solid var(--border);
+}
+.segmented__item {
+  flex: 1 1 auto; min-width: 60px; height: 40px; border-radius: var(--r-full);
+  border: none; background: transparent; color: var(--text-2);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.segmented__item.is-active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs); }
+.segmented__item:active { transform: scale(0.97); }
+
+.slider {
+  -webkit-appearance: none; width: 100%; height: 44px; padding: 0;
+  margin: 0; border: none; background: transparent;
+  -webkit-appearance: none; appearance: none; outline: none; cursor: pointer;
+  touch-action: manipulation;
+}
+.slider::-webkit-slider-runnable-track,
+.slider::-ms-fill-lower, .slider::-ms-fill-upper {
+  height: 6px; border-radius: var(--r-pill); background: var(--track);
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  margin-top: -9px; cursor: pointer;
+}
+.slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
+.slider::-moz-range-track { height: 6px; border-radius: var(--r-pill); background: var(--track); }
+.slider:focus-visible .slider::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+.sound__row { display: flex; align-items: center; gap: var(--sp-2); }
+.sound__out { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-2); min-width: 36px; text-align: right; }
+
+/* Sound page slide transition */
+@keyframes slideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+@keyframes slideOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(12px); } }
+.view--sound { animation: slideIn 0.24s var(--ease-out) both; }
+.view--sound[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .view--sound { animation: viewIn 0.01s both; }
+}
+
+/* topbar: back button (Sound) and Add (Music) are visibility-toggled in JS */
+.topbar__controls #backBtn { margin-right: calc(var(--sp-1) * -1); }

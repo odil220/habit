@@ -36,6 +36,7 @@
         s.shuffle = !!s.shuffle;
         s.repeat = !!s.repeat;
         s.volume = typeof s.volume === "number" ? s.volume : 1;
+        s.sound = s.sound || { preset: "flat", volume: 1, eq: { bass: 0, treble: 0, balance: 0 } };
         return s;
       }
     } catch (e) {}
@@ -43,6 +44,7 @@
       habits: [], days: {}, theme: prefersDark() ? "dark" : "light", accent: "warm",
       avatar: "", music: [], collections: [], recentlyPlayed: [], positions: {},
       shuffle: false, repeat: false, volume: 1,
+      sound: { preset: "flat", volume: 1, eq: { bass: 0, treble: 0, balance: 0 } },
     };
     if (DEMO) seed(fresh);
     return fresh;
@@ -87,7 +89,7 @@
 
   /* ---------- DOM refs ---------- */
   const $ = (id) => document.getElementById(id);
-  const views = { habits: $("view-habits"), note: $("view-note"), music: $("view-music") };
+  const views = { habits: $("view-habits"), note: $("view-note"), music: $("view-music"), sound: $("view-sound") };
   const navItems = Array.from(document.querySelectorAll(".nav__item"));
   const navIndicator = $("navIndicator");
   const veil = document.querySelector(".veil");
@@ -392,12 +394,12 @@
   const musicPlayIcon = $("musicPlayIcon");
   const musicPrev = $("musicPrev");
   const musicNext = $("musicNext");
-  const musicShuffle = $("musicShuffle");
+   const musicShuffle = $("musicShuffle");
   const musicRepeat = $("musicRepeat");
-  const musicVolBtn = $("musicVolBtn");
-  const musicVolume = $("musicVolume");
-  const musicVolInput = musicVolume.querySelector(".music__vol");
+  const musicSound = $("musicSound");
   const musicBackBar = $("musicBackBar");
+  const backBtn = $("backBtn");
+
   const musicChips = $("musicChips");
   const musicList = $("musicList");
   const colEyebrow = $("colEyebrow");
@@ -417,7 +419,8 @@
   const fullArtIcon = $("fullArt").querySelector(".full__articon");
 
   const audio = new Audio();
-  audio.volume = state.volume;
+  audio.volume = state.sound ? state.sound.volume : state.volume;
+  state.volume = audio.volume;
 
   const urls = {};     // id -> objectURL
   const blobs = {};    // id -> Blob (for reliable undo)
@@ -910,17 +913,89 @@
   musicArt.addEventListener("click", openFull);
   musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
   musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
-  musicVolBtn.addEventListener("click", () => {
-    musicVolume.hidden = !musicVolume.hidden;
-    musicVolBtn.setAttribute("aria-expanded", String(!musicVolume.hidden));
-    if (!musicVolume.hidden) musicVolInput.focus();
+  musicSound.addEventListener("click", () => showView("sound"));
+  backBtn.addEventListener("click", () => {
+    if (currentView === "sound") showView("music");
+    else showView("habits");
   });
-  musicVolInput.addEventListener("input", () => {
-    audio.volume = parseFloat(musicVolInput.value); audio.muted = false; state.volume = audio.volume; save();
+
+  /* ---- dedicated Sound page (EQ / volume / balance) ---- */
+  const soundPresets = $("soundPresets");
+  const soundVolume = $("soundVolume");
+  const soundVolumeVal = $("soundVolumeVal");
+  const soundBass = $("soundBass");
+  const soundBassVal = $("soundBassVal");
+  const soundTreble = $("soundTreble");
+  const soundTrebleVal = $("soundTrebleVal");
+  const soundBalance = $("soundBalance");
+  const soundBalanceVal = $("soundBalanceVal");
+  let eq = null;
+  const PRESETS = {
+    flat: { bass: 0, treble: 0, balance: 0 },
+    balanced: { bass: 2, treble: 1, balance: 0 },
+    bass: { bass: 6, treble: 0, balance: 0 },
+    vocal: { bass: -2, treble: 4, balance: 0 },
+    treble: { bass: 0, treble: 6, balance: 0 },
+  };
+  function initEQ() {
+    if (eq || !window.AudioContext) return false;
+    try {
+      const C = new (window.OfflineAudioContext ? window.AudioContext : window.AudioContext)();
+      const src = C.createMediaElementSource(audio);
+      const low = C.createBiquadFilter(); low.type = "lowshelf"; low.frequency.value = 120;
+      const high = C.createBiquadFilter(); high.type = "highshelf"; high.frequency.value = 3800;
+      const pan = C.createStereoPanner();
+      const gain = C.createGain();
+      src.connect(low).connect(high).connect(pan).connect(gain).connect(C.destination);
+      eq = { ctx: C, low, high, pan, gain };
+      C.resume().catch(() => {});
+      return true;
+    } catch (e) { eq = null; return false; }
+  }
+  function applyEQ() {
+    if (!eq) return;
+    const q = state.sound.eq;
+    eq.low.gain.setTargetAtTime(q.bass, 0, 0.01);
+    eq.high.gain.setTargetAtTime(q.treble, 0, 0.01);
+    eq.pan.pan.setTargetAtTime(q.balance / 100, 0, 0.01);
+  }
+  function applyPreset(name) {
+    state.sound.preset = name;
+    const v = PRESETS[name] || PRESETS.flat;
+    state.sound.eq = { bass: v.bass, treble: v.treble, balance: v.balance };
+    if (eq) { applyEQ(); }
+    soundBass.value = v.bass; soundBassVal.textContent = v.bass;
+    soundTreble.value = v.treble; soundTrebleVal.textContent = v.treble;
+    soundBalance.value = v.balance; soundBalanceVal.textContent = v.balance;
+    document.querySelectorAll("[data-preset]", soundPresets).forEach((b) => b.classList.toggle("is-active", b.dataset.preset === name));
+    save();
+  }
+  soundPresets.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-preset]");
+    if (!b) return;
+    applyPreset(b.dataset.preset);
+    applyVolume();
   });
-  document.addEventListener("click", (e) => {
-    if (!musicVolume.contains(e.target) && e.target !== musicVolBtn) musicVolume.hidden = true;
+  soundVolume.addEventListener("input", () => {
+    const v = parseFloat(soundVolume.value);
+    audio.volume = v; state.sound.volume = v; state.volume = v;
+    soundVolumeVal.textContent = Math.round(v * 100);
+    save();
   });
+  function bindSlider(s, out, key) {
+    out.textContent = s.value;
+    s.addEventListener("input", () => { out.textContent = s.value; state.sound.eq[key] = parseFloat(s.value); if (eq) applyEQ(); save(); });
+  }
+  bindSlider(soundBass, soundBassVal, "bass");
+  bindSlider(soundTreble, soundTrebleVal, "treble");
+  bindSlider(soundBalance, soundBalanceVal, "balance");
+  function applyVolume() {
+    soundVolume.value = String(state.sound.volume);
+    soundVolumeVal.textContent = Math.round(state.sound.volume * 100);
+    audio.volume = state.sound.volume;
+    const p = state.sound.preset;
+    document.querySelectorAll("[data-preset]", soundPresets).forEach((b) => b.classList.toggle("is-active", b.dataset.preset === p));
+  }
 
   let mpSeeking = false;
   musicBar.addEventListener("pointerdown", (e) => { mpSeeking = true; musicBar.setPointerCapture(e.pointerId); mpSeek(e); });
@@ -1196,7 +1271,8 @@
     const map = {
       habits: { eyebrow: fmtDate(TODAY), title: "Today's Habits" },
       note: { eyebrow: fmtDate(TODAY), title: "Today's Note" },
-      music: { eyebrow: "Your sounds", title: "Music" },
+       music: { eyebrow: "Your sounds", title: "Music" },
+      sound: { eyebrow: "Audio", title: "Sound" },
     };
     const m = map[view];
     $("eyebrow").textContent = m.eyebrow;
@@ -1208,6 +1284,8 @@
     if (currentView === "note") { document.body.classList.remove("is-typing"); editor.blur(); }
     if (currentView === "music") showLibrary();
     currentView = view;
+    backBtn.hidden = view !== "sound";
+    addMusicBtn.hidden = view !== "music";
     Object.keys(views).forEach((v) => {
       const el = views[v];
       if (v === view) { el.hidden = false; el.classList.add("is-active"); el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; }
@@ -1221,6 +1299,7 @@
     setHeader(view);
     if (view === "note") loadNote();
     if (view === "music") { if (currentColId) showLibrary(); else renderLibrary(); updateUI(); }
+    if (view === "sound") { initEQ(); applyVolume(); applyEQ(); }
     if (view === "habits") renderHabits();
     updateMiniVisibility();
     positionIndicator();
@@ -1256,7 +1335,7 @@
     const params = new URLSearchParams(location.search);
     if (params.get("theme") === "dark" || params.get("theme") === "light") state.theme = params.get("theme");
     if (params.get("accent") === "warm" || params.get("accent") === "cool") state.accent = params.get("accent");
-    if (params.get("view") === "note" || params.get("view") === "music" || params.get("view") === "habits") currentView = params.get("view");
+    if (params.get("view") === "note" || params.get("view") === "music" || params.get("view") === "habits" || params.get("view") === "sound") currentView = params.get("view");
 
     applyThemeChrome();
     setHeader(currentView);

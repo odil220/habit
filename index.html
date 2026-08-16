@@ -53,6 +53,13 @@
           <h1 class="title" id="title">Today's Habits</h1>
         </div>
         <div class="topbar__controls">
+          <button class="iconbtn" id="backBtn" aria-label="Back" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="btn-add btn-add--sm" id="addMusicBtn" hidden>
+            <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+            Add
+          </button>
           <button class="iconbtn" id="themeToggle" aria-label="Toggle light and dark theme">
             <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4.2"/>
@@ -140,18 +147,6 @@
 
       <!-- ---------- MUSIC ---------- -->
       <section class="view view--music" id="view-music" aria-label="Music" hidden>
-        <!-- Header -->
-        <div class="music__head page-head">
-          <div>
-            <p class="eyebrow">Your sounds</p>
-            <h1 class="page-title">Music</h1>
-          </div>
-          <button class="btn-add btn-add--sm" id="addMusicBtn">
-            <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-            Add
-          </button>
-        </div>
-
         <!-- Inline now-playing player (mobile-first) -->
         <div class="music__player" id="musicPlayer" hidden>
           <button class="music__art" id="musicArt" aria-label="Open player">
@@ -187,14 +182,9 @@
             <button class="music__ctrl" id="musicRepeat" aria-label="Repeat">
               <svg viewBox="0 0 24 24"><path d="M7 8a4 4 0 0 1 4-4h6M17 16a4 4 0 0 1-4 4H7M17 4l2 2-2 2M7 20l-2-2 2-2"/></svg>
             </button>
-          </div>
-          <div class="music__volrow">
-            <button class="music__ctrl" id="musicVolBtn" aria-label="Volume" aria-haspopup="true" aria-expanded="false">
-              <svg viewBox="0 0 24 24"><path d="M4 5v14h4l5 4V1L4 5z"/><path d="M15.5 8a4.5 4.5 0 0 1 0 8M17.7 5.7A7 7 0 0 1 20 12a7 7 0 0 1-2.3 6.3"/></svg>
+            <button class="music__ctrl" id="musicSound" aria-label="Sound">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V5l7 7-7 6z"/><path d="M7.5 16.5A7.5 7.5 0 0 1 16.5 12"/></svg>
             </button>
-            <div class="music__volume" id="musicVolume" hidden>
-              <input type="range" class="music__vol" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
-            </div>
           </div>
         </div>
 
@@ -221,6 +211,50 @@
             <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
             Add music
           </button>
+        </div>
+      </section>
+
+      <!-- ---------- SOUND (dedicated audio page) ---------- -->
+      <section class="view view--sound" id="view-sound" aria-label="Sound" hidden>
+        <div class="sound__stage">
+          <div class="sound__group">
+            <div class="sound__label">Presets</div>
+            <div class="segmented" id="soundPresets" role-group aria-label="Equalizer presets">
+              <button class="segmented__item" data-preset="flat">Flat</button>
+              <button class="segmented__item" data-preset="balanced">Balanced</button>
+              <button class="segmented__item" data-preset="bass">Bass</button>
+              <button class="segmented__item" data-preset="vocal">Vocal</button>
+              <button class="segmented__item" data-preset="treble">Treble</button>
+            </div>
+          </div>
+          <div class="sound__group">
+            <div class="sound__label">Volume</div>
+            <label class="sound__row">
+              <output class="sound__out" id="soundVolumeVal" aria-live="polite">100</output>
+              <input class="slider" type="range" id="soundVolume" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+            </label>
+          </div>
+          <div class="sound__group">
+            <div class="sound__label">Bass</div>
+            <label class="sound__row">
+              <output class="sound__out" id="soundBassVal" aria-live="polite">0</output>
+              <input class="slider" type="range" id="soundBass" min="-12" max="12" step="1" value="0" aria-label="Bass" />
+            </label>
+          </div>
+          <div class="sound__group">
+            <div class="sound__label">Treble</div>
+            <label class="sound__row">
+              <output class="sound__out" id="soundTrebleVal" aria-live="polite">0</output>
+              <input class="slider" type="range" id="soundTreble" min="-12" max="12" step="1" value="0" aria-label="Treble" />
+            </label>
+          </div>
+          <div class="sound__group">
+            <div class="sound__label">Balance</div>
+            <label class="sound__row">
+              <output class="sound__out" id="soundBalanceVal" aria-live="polite">0</output>
+              <input class="slider" type="range" id="soundBalance" min="-100" max="100" step="2" value="0" aria-label="Balance" />
+            </label>
+          </div>
         </div>
       </section>
 
