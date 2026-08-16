@@ -1056,14 +1056,25 @@ body.is-typing .toast {
    A native-feeling phone composition:
    header -> inline now-playing card -> category chips -> list
    ========================================================= */
+/* MOBILE MUSIC — mobile-first page (iPhone widths)
+   Structure: header (top) -> centered now-playing card -> library (bottom) */
+.view--music {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+}
 .music__head {
+  width: 100%;
+  margin: 0 0 var(--sp-4);
+  padding: 0 var(--sp-4);
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
-  margin-bottom: var(--sp-6); padding: 0 var(--sp-4);
 }
 .music__head .btn-add--sm { height: 38px; padding: 0 14px; gap: 6px; }
 .btn-add--sm .btn-add__plus { width: 16px; height: 16px; }
 
-/* inline now-playing card */
+/* inline now-playing card (centered on screen) */
 .music__player {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1071,8 +1082,8 @@ body.is-typing .toast {
   box-shadow: var(--shadow-sm);
   text-align: center;
   padding: var(--sp-5) var(--sp-4) var(--sp-4);
-  margin: 0 auto var(--sp-6);
-  max-width: 414px;
+  width: 100%; max-width: 414px;
+  margin: auto;
 }
 .music__art {
   width: min(80%, 300px); height: auto; aspect-ratio: 1 / 1;
@@ -1120,7 +1131,7 @@ body.is-typing .toast {
 .music__vol::-moz-range-thumb { width: 12px; height: 12px; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
 
 /* library: chips + list */
-.music__library { margin-top: var(--sp-3); }
+.music__library { width: 100%; margin-top: var(--sp-3); }
 .music__chips {
   display: flex; gap: var(--sp-2); overflow-x: auto; scroll-padding-left: var(--sp-4);
   padding: 0 var(--sp-4) var(--sp-3); margin-bottom: var(--sp-2);
@@ -1136,7 +1147,7 @@ body.is-typing .toast {
 .chip .chip__count { margin-left: 6px; font-size: 12px; opacity: 0.85; }
 .chip.is-active .chip__count { color: var(--on-accent); }
 
-.music__list { padding: 0 var(--sp-4); }
+.music__list { padding: 0 var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom)); }
 .music__list .track {
   border-radius: 0; border-bottom: 1px solid var(--border);
   padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-2);
