@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="warm">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#faf8f5" />
+
+  <!-- Early theme: avoid flash of wrong theme before app.js runs -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem("ordinary.v1") || "{}");
+        var theme = s.theme || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        var accent = s.accent || "warm";
+        var d = document.documentElement;
+        d.setAttribute("data-theme", theme);
+        d.setAttribute("data-accent", accent);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#14110f" : "#faf8f5");
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- PWA / installable -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- iOS standalone -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Ordinary" />
+  <meta name="application-name" content="Ordinary" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <title>Ordinary — daily habits & notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient theme transition veil -->
+  <div class="veil" aria-hidden="true"></div>
+
+  <div class="app">
+    <!-- ============ HEADER ============ -->
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="topbar__heading">
+          <p class="eyebrow" id="eyebrow">Saturday, August 15</p>
+          <h1 class="title" id="title">Today's Habits</h1>
+        </div>
+
+        <div class="topbar__controls">
+          <div class="seg" role="group" aria-label="Accent color">
+            <button class="seg__dot seg__dot--warm" data-set-accent="warm" title="Warm accent" aria-label="Warm mocha accent"></button>
+            <button class="seg__dot seg__dot--cool" data-set-accent="cool" title="Cool accent" aria-label="Cool blue accent"></button>
+          </div>
+          <button class="iconbtn" id="themeToggle" aria-label="Toggle light and dark theme">
+            <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2"/>
+              <path d="M12 2.4v2.2M12 19.4v2.2M4.4 4.4l1.6 1.6M18 18l1.6 1.6M2.4 12h2.2M19.4 12h2.2M4.4 19.6l1.6-1.6M18 6l1.6-1.6"/>
+            </svg>
+            <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 14.2A8 8 0 0 1 9.8 4 7 7 0 1 0 20 14.2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <main class="stage" id="stage">
+
+      <!-- ---------- HABITS ---------- -->
+      <section class="view view--habits is-active" id="view-habits" aria-label="Today's habits">
+        <div class="progress">
+          <div class="progress__head">
+            <span class="progress__label">Today's progress</span>
+            <span class="progress__count"><strong id="doneCount">0</strong>&nbsp;of&nbsp;<span id="totalCount">0</span>&nbsp;completed&nbsp;·&nbsp;<span id="pct">0%</span></span>
+          </div>
+          <div class="progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progTrack">
+            <div class="progress__fill" id="progFill"></div>
+          </div>
+        </div>
+
+        <div class="list" id="habitList" aria-live="polite"></div>
+
+        <button class="addhabit" id="addHabitBtn" aria-expanded="false">
+          <span class="addhabit__plus" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span class="addhabit__text">Add habit</span>
+        </button>
+
+        <form class="addform" id="addForm" hidden>
+          <input class="addform__input" id="addInput" type="text" placeholder="What would you like to do?" maxlength="60" autocomplete="off" aria-label="Habit name" />
+          <div class="addform__actions">
+            <button type="submit" class="btn btn--primary">Add</button>
+            <button type="button" class="btn btn--ghost" id="addCancel">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ---------- NOTE ---------- -->
+      <section class="view view--note" id="view-note" aria-label="Today's note" hidden>
+        <div class="note">
+          <div class="note__editor" id="noteEditor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Today's note" data-placeholder="How was today? Write whatever you'd like to remember…"></div>
+        </div>
+        <div class="note__status" id="noteStatus" aria-live="polite">
+          <span class="note__statusdot"></span>
+          <span class="note__statustext">Saved</span>
+        </div>
+      </section>
+
+      <!-- ---------- HISTORY ---------- -->
+      <section class="view view--history" id="view-history" aria-label="History" hidden>
+        <div class="history" id="historyList"></div>
+      </section>
+
+    </main>
+
+    <!-- ============ BOTTOM NAV ============ -->
+    <nav class="nav" id="nav" aria-label="Primary">
+      <div class="nav__pill">
+        <span class="nav__indicator" id="navIndicator" aria-hidden="true"></span>
+        <button class="nav__item is-active" data-view="habits" aria-current="page">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h15"/></svg>
+          <span class="nav__label">Habits</span>
+        </button>
+        <button class="nav__item" data-view="note">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19h14M6.5 16.5l9.6-9.6a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L9.9 19.9H6.5z"/></svg>
+          <span class="nav__label">Note</span>
+        </button>
+        <button class="nav__item" data-view="history">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3.5 2"/><path d="M20.5 12a8.5 8.5 0 1 1-3-6.5"/><path d="M20.5 4v3.5h-3.5"/></svg>
+          <span class="nav__label">History</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span class="toast__text" id="toastText">Habit deleted</span>
+    <button class="toast__action" id="toastUndo">Undo</button>
+  </div>
+
+  <!-- ============ HISTORY DETAIL SHEET ============ -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__scrim" data-close-sheet></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <p class="eyebrow" id="sheetDate">Friday, August 14</p>
+      <h2 class="sheet__title" id="sheetTitle">4 of 5 completed</h2>
+      <div class="sheet__body" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
