@@ -101,7 +101,7 @@
     document.documentElement.setAttribute("data-theme", state.theme);
     document.documentElement.setAttribute("data-accent", state.accent);
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", state.theme === "dark" ? "#2a0800" : "#f6ecea");
+    if (meta) meta.setAttribute("content", state.theme === "dark" ? "#000000" : "#ffffff");
   }
   applyThemeChrome();
 

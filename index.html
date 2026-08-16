@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f6ecea" />
+  <meta name="theme-color" content="#ffffff" />
 
   <!-- Early theme: avoid flash of wrong theme before app.js runs -->
   <script>
@@ -16,7 +16,7 @@
         d.setAttribute("data-theme", theme);
         d.setAttribute("data-accent", accent);
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", theme === "dark" ? "#2a0800" : "#f6ecea");
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#000000" : "#ffffff");
       } catch (e) {}
     })();
   </script>
