@@ -401,16 +401,17 @@
   const addMusicBtn = $("addMusicBtn");
   const musicFileInput = $("musicFileInput");
   const musicFolderInput = $("musicFolderInput");
-  const artworkInput = $("artworkInput");
 
   const miniArtImg = $("miniArt").querySelector(".mini__artimg");
   const miniArtIcon = $("miniArt").querySelector(".mini__articon");
-  const fullArtImg = $("fullArt").querySelector(".full__artimg");
-  const fullArtIcon = $("fullArt").querySelector(".full__articon");
 
   const audio = new Audio();
+  audio.preload = "metadata";
   audio.volume = state.sound ? state.sound.volume : state.volume;
   state.volume = audio.volume;
+  audio.addEventListener("error", () => {
+    if (currentId) showToast("This song couldn't be played.", "OK", () => {});
+  });
 
   const urls = {};     // id -> objectURL
   const blobs = {};    // id -> Blob (for reliable undo)
@@ -418,9 +419,6 @@
   let isPlaying = false;
   let currentColId = null;
   let pendingDeleteTrack = null;
-  let pendingFiles = [];
-  let sheetMode = "files";
-  let sheetTrackId = null;
 
   /* --- tiny IndexedDB wrapper --- */
   let _db = null;
@@ -489,11 +487,11 @@
     n = n.replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
     return n || f || "Untitled";
   }
-  function isAudio(file) {
-    if (file.type && file.type.startsWith("audio/")) return true;
-    const ext = (file.name.split(".").pop() || "").toLowerCase();
-    return ["mp3", "wav", "m4a", "ogg", "aac", "flac", "webm", "oga"].includes(ext);
-  }
+   function isAudio(file) {
+     if (file.type && file.type.startsWith("audio/")) return true;
+     const ext = (file.name.split(".").pop() || "").toLowerCase();
+     return ["mp3", "mp4", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus", "aiff", "aif", "caf", "3gp", "webm"].includes(ext);
+   }
 
   function trackRowHTML(t) {
     const hasArt = !!(t.artwork);
@@ -509,7 +507,7 @@
           : '<span class="track__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></span>'}
         <div class="track__info">
           <div class="track__title">${escapeHtml(t.name)}</div>
-          <div class="track__sub">${escapeHtml(t.file)}${t.duration ? " · " + fmtTime(t.duration) : ""}</div>
+          <div class="track__sub">${escapeHtml(t.file)}</div>
         </div>
         <span class="track__dur">${t.duration ? fmtTime(t.duration) : ""}</span>
         <button class="track__more" aria-label="More options for ${escapeHtml(t.name)}">
@@ -535,191 +533,49 @@
    });
 
   /* ---- add music flow ---- */
-  let addContext = "library"; // "library" or a collection id
-
-  function openAddChoice(anchor) {
-    const items = [
-      { label: "Choose files", icon: '<svg viewBox="0 0 24 24"><path d="M4 16l4.5-4.5 3.5 3.5L16 9l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>', onSelect: () => musicFileInput.click() },
-    ];
-    if ("webkitdirectory" in musicFolderInput) {
-      items.push({ label: "Choose folder", icon: '<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', onSelect: () => musicFolderInput.click() });
-    }
-    openPop(anchor, items);
-  }
   const emptyAddMusic = $("emptyAddMusic");
-  addMusicBtn.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
-  if (emptyAddMusic) emptyAddMusic.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
+  function openAddMusic() { musicFileInput.click(); }
+  addMusicBtn.addEventListener("click", openAddMusic);
+  if (emptyAddMusic) emptyAddMusic.addEventListener("click", openAddMusic);
   musicFileInput.addEventListener("change", () => { handleSelectedFiles(musicFileInput.files); musicFileInput.value = ""; });
   musicFolderInput.addEventListener("change", () => { handleSelectedFiles(musicFolderInput.files); musicFolderInput.value = ""; });
 
-  let trackArtTarget = null;
-  artworkInput.addEventListener("change", async () => {
-    const file = artworkInput.files && artworkInput.files[0];
-    artworkInput.value = "";
-    if (!file) return;
-    try {
-      const dataUrl = await downscaleImage(file, 320);
-      if (trackArtTarget) {
-        trackArtTarget.artwork = dataUrl;
-        save(); updateArtDisplay(trackArtTarget); updatePlayerArt();
-        showToast("Artwork updated", "OK", () => {});
-        trackArtTarget = null;
-      } else {
-        const i = parseInt(artworkInput.dataset.idx, 10);
-        if (pendingFiles[i]) {
-          pendingFiles[i].artwork = dataUrl;
-          const row = sheetDetailsList.querySelector(".drow[data-i='" + i + "']");
-          if (row) {
-            const img = row.querySelector(".drow__artimg");
-            const icon = row.querySelector(".drow__articon");
-            if (img && icon) { img.src = dataUrl; img.hidden = false; icon.style.display = "none"; row.querySelector(".drow__art").classList.add("has-art"); }
-          }
-        }
-      }
-    } catch (err) {
-      showToast("Couldn't load that image", "OK", () => {});
+   function canPlay(file) {
+     const a = document.createElement("audio");
+     if (file.type) { const c = a.canPlayType(file.type); if (c) return !!c; }
+     const ext = (file.name.split(".").pop() || "").toLowerCase();
+      return ["mp3", "m4a", "aac", "mp4", "wav", "flac", "ogg", "oga", "opus", "aiff", "aif", "caf", "3gp"].includes(ext);
     }
-  });
+    function handleSelectedFiles(fileList) {
+     const files = Array.from(fileList || []).filter(isAudio);
+     const playable = []; const unsupported = [];
+     files.forEach((f) => (canPlay(f) ? playable : unsupported).push(f));
+     if (unsupported.length) showToast("This audio format isn't supported by your browser.", "OK", () => {});
+     if (!playable.length) return;
+     const before = state.music.length;
+     (async () => {
+       for (const f of playable) {
+         if (state.music.some((t) => t.file === f.name)) continue;
+         await createTrack(f, null, null, null);
+       }
+       save(); afterMusicChange();
+       const n = state.music.length - before;
+       if (n > 0) showToast(n === 1 ? "Added 1 song" : "Added " + n + " songs", "OK", () => {});
+     })();
+   }
 
-  function handleSelectedFiles(fileList) {
-    const files = Array.from(fileList || []).filter(isAudio);
-    if (!files.length) { showToast("No audio files found", "OK", () => {}); return; }
-    openAddSheet("files", files);
-  }
+   async function createTrack(file, colId, artwork, name) {
+     const id = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+     const url = URL.createObjectURL(file);
+     urls[id] = url; blobs[id] = file;
+     const duration = await getDuration(url);
+     const track = { id, name: name || cleanName(file.name), file: file.name, duration, collections: colId ? [colId] : [], artwork: artwork || "" };
+     state.music.push(track);
+     try { await idbPut({ id, name: file.name, type: file.type, blob: file, artwork: artwork || "" }); } catch (e) {}
+     return track;
+   }
 
-  async function createTrack(file, colId, artwork, name) {
-    const id = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const url = URL.createObjectURL(file);
-    urls[id] = url; blobs[id] = file;
-    const duration = await getDuration(url);
-    const track = { id, name: name || cleanName(file.name), file: file.name, duration, collections: colId ? [colId] : [], artwork: artwork || "" };
-    state.music.push(track);
-    try { await idbPut({ id, name: file.name, type: file.type, blob: file, artwork: artwork || "" }); } catch (e) {}
-    return track;
-  }
-
-  function openAddSheet(mode, files, trackId) {
-    const sheet = $("addSheet");
-    sheetMode = mode;
-    sheetTrackId = trackId;
-    if (mode === "files" && files && files.length) {
-      pendingFiles = files.map((f) => ({ file: f, name: cleanName(f.name), artwork: "" }));
-      renderDetailsStep();
-    } else {
-      pendingFiles = [];
-      showTargets();
-    }
-    $("newColInput").value = "";
-    sheet.hidden = false;
-    requestAnimationFrame(() => sheet.classList.add("is-open"));
-  }
-
-  function renderDetailsStep() {
-    sheetDetails.hidden = false;
-    sheetTargets.hidden = true;
-    sheetNewCol.hidden = true;
-    sheetTitle.textContent = "Add music";
-    sheetConfirm.textContent = "Next";
-    sheetConfirm.onclick = () => {
-      if (addContext === "library") { showTargets(); }
-      else { closeSheet($("addSheet")); applyTarget("files"); }
-    };
-    sheetBack.textContent = "Cancel";
-    sheetBack.onclick = () => closeSheet($("addSheet"));
-
-    sheetDetailsList.innerHTML = pendingFiles.map((pf, i) => `
-      <div class="drow" data-i="${i}">
-        <div class="drow__name" title="${escapeHtml(pf.file.name)}">${escapeHtml(pf.file.name)}</div>
-        <input class="drow__rename" type="text" value="${escapeHtml(pf.name)}" maxlength="60" placeholder="Track name" autocomplete="off" />
-        <button class="drow__art ic" type="button" aria-label="Add artwork for ${escapeHtml(pf.name)}" data-i="${i}">
-          <img class="drow__artimg" alt="" hidden />
-          <svg class="drow__articon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4.5-4.5 3.5 3.5L16 9l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><circle cx="9" cy="8" r="1.6"/></svg>
-        </button>
-      </div>`).join("");
-
-    sheetDetailsList.querySelectorAll(".drow__rename").forEach((inp) => {
-      inp.addEventListener("input", () => {
-        const i = parseInt(inp.closest(".drow").dataset.i, 10);
-        const nm = inp.value.trim();
-        pendingFiles[i].name = nm || cleanName(pendingFiles[i].file.name);
-      });
-    });
-    sheetDetailsList.querySelectorAll(".drow__art").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const i = parseInt(btn.dataset.i, 10);
-        artworkInput.dataset.idx = i;
-        artworkInput.click();
-      });
-    });
-  }
-
-  function showTargets() {
-    sheetDetails.hidden = true;
-    sheetTargets.hidden = false;
-    sheetNewCol.hidden = true;
-    sheetTitle.textContent = "Add to collection";
-    sheetConfirm.textContent = "Done";
-    sheetConfirm.onclick = () => {
-      if (sheetMode === "files") { closeSheet($("addSheet")); applyTarget("files", null, null, null); }
-      else { closeSheet($("addSheet")); }
-    };
-    sheetBack.textContent = "Back";
-    sheetBack.onclick = () => { if (sheetMode === "files") renderDetailsStep(); else closeSheet($("addSheet")); };
-
-    const targetList = [{ id: null, name: "Library" }].concat(state.collections);
-    sheetTargets.innerHTML = targetList.map((c) => `
-      <button class="target" data-col="${c.id === null ? "" : c.id}">
-        <span class="target__dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></span>
-        <span>${c.id === null ? "Library" : escapeHtml(c.name)}</span>
-        ${c.id === null ? "" : '<span class="target__meta">' + state.music.filter((t) => t.collections.includes(c.id)).length + "</span>"}
-      </button>`).join("") +
-      `<button class="target target--new" data-new="1">
-        <span class="target__dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
-        <span>Create new collection</span>
-      </button>`;
-
-    sheetTargets.querySelectorAll(".target").forEach((b) => {
-      b.addEventListener("click", () => {
-        if (b.dataset.new) { sheetNewCol.hidden = false; sheetTargets.hidden = true; $("newColInput").focus(); return; }
-        const colId = b.dataset.col || null;
-        applyTarget(sheetMode, null, sheetTrackId, colId);
-        closeSheet($("addSheet"));
-      });
-    });
-    $("newColCreate").onclick = () => {
-      const name = $("newColInput").value.trim();
-      if (!name) { $("newColInput").focus(); return; }
-      const col = { id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name };
-      state.collections.push(col);
-      save();
-      applyTarget(sheetMode, null, sheetTrackId, col.id);
-      closeSheet($("addSheet"));
-    };
-    $("newColCancel").onclick = () => { sheetNewCol.hidden = true; sheetTargets.hidden = false; };
-  }
-
-  function applyTarget(mode, files, trackId, colId) {
-    if (mode === "files") {
-      Promise.all(pendingFiles.map((pf) => createTrack(pf.file, colId, pf.artwork, pf.name))).then(() => {
-        save(); afterMusicChange();
-        showToast(pendingFiles.length + (pendingFiles.length === 1 ? " song" : " songs") + " added", "OK", () => {});
-      });
-    } else if (mode === "track" && trackId) {
-      const t = state.music.find((x) => x.id === trackId);
-      if (t && colId && !t.collections.includes(colId)) t.collections.push(colId);
-      save(); afterMusicChange();
-      showToast("Added to collection", "OK", () => {});
-    }
-  }
-
-  function afterMusicChange() { renderLibrary(); }
-
-  function closeSheet(sheet) {
-    sheet.classList.remove("is-open");
-    setTimeout(() => { sheet.hidden = true; }, 340);
-  }
-  document.querySelectorAll("[data-close-sheet]").forEach((el) => el.addEventListener("click", () => closeSheet($("addSheet"))));
+   function afterMusicChange() { renderLibrary(); }
 
   /* ---- track menu ---- */
   function openTrackMenu(id, anchor) {
@@ -738,23 +594,6 @@
   const miniTitle = $("miniTitle");
   const miniSub = $("miniSub");
   const miniPlayIcon = $("miniPlayIcon");
-  const full = $("full");
-  const fullArt = $("fullArt");
-  const fullTitle = $("fullTitle");
-  const fullSub = $("fullSub");
-  const fullFill = $("fullFill");
-  const fullKnob = $("fullKnob");
-  const fullCur = $("fullCur");
-  const fullDur = $("fullDur");
-  const fullPlayIcon = $("fullPlayIcon");
-
-  const sheetTitle = $("addSheetTitle");
-  const sheetDetails = $("addDetails");
-  const sheetDetailsList = $("addDetailsList");
-  const sheetTargets = $("addTargets");
-  const sheetNewCol = $("newColWrap");
-  const sheetConfirm = $("addSheetConfirm");
-  const sheetBack = $("addSheetBack");
 
   let pendingSeekId = null, pendingSeekTime = 0;
 
@@ -796,28 +635,14 @@
   $("miniPlay").addEventListener("click", togglePlay);
   $("miniPrev").addEventListener("click", () => { if (audio.currentTime > 3) { audio.currentTime = 0; } else step(-1); });
   $("miniNext").addEventListener("click", () => step(1));
-  $("miniArt").addEventListener("click", openFull);
-  mini.querySelector(".mini__info").addEventListener("click", openFull);
-  mini.addEventListener("click", (e) => { if (e.target.closest(".mini__btn")) return; openFull(); });
+  mini.addEventListener("click", () => showView("music"));
 
-  $("fullPlay").addEventListener("click", togglePlay);
-  $("fullPrev").addEventListener("click", () => { if (audio.currentTime > 3) { audio.currentTime = 0; } else step(-1); });
-  $("fullNext").addEventListener("click", () => step(1));
-  $("fullShuffle").addEventListener("click", () => { state.shuffle = !state.shuffle; $("fullShuffle").classList.toggle("is-on", state.shuffle); save(); });
-  $("fullRepeat").addEventListener("click", () => { state.repeat = !state.repeat; $("fullRepeat").classList.toggle("is-on", state.repeat); save(); });
-  $("fullMin").addEventListener("click", closeFull);
-  $("fullClose").addEventListener("click", closeFull);
-  $("fullVol").addEventListener("input", () => {
-    audio.volume = parseFloat($("fullVol").value); audio.muted = false; state.volume = audio.volume; save();
-  });
-
-  /* ---- inline mobile player ---- */
+  /* ---- inline music player ---- */
   function prevTrack() { if (audio.currentTime > 3) { audio.currentTime = 0; } else step(-1); }
   function nextTrack() { step(1); }
   musicPrev.addEventListener("click", prevTrack);
   musicNext.addEventListener("click", nextTrack);
   musicPlay.addEventListener("click", togglePlay);
-  musicArt.addEventListener("click", openFull);
   musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
   musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
   let mpSeeking = false;
@@ -839,53 +664,18 @@
     }
   }
 
-  function openFull() {
-    if (!currentId) return;
-    full.hidden = false;
-    requestAnimationFrame(() => full.classList.add("is-open"));
-    $("fullShuffle").classList.toggle("is-on", state.shuffle);
-    $("fullRepeat").classList.toggle("is-on", state.repeat);
-    updatePlayerArt();
-  }
-  function closeFull() {
-    full.classList.remove("is-open");
-    setTimeout(() => { if (!full.classList.contains("is-open")) full.hidden = true; }, 340);
-  }
-
-  /* seeking */
-  function seekFromEvent(bar, clientX) {
-    const rect = bar.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    if (isFinite(audio.duration) && audio.duration) audio.currentTime = ratio * audio.duration;
-    fullFill.style.width = (ratio * 100) + "%";
-  }
-  let seeking = false;
-  const fullBar = $("fullBar");
-  fullBar.addEventListener("pointerdown", (e) => { seeking = true; fullBar.setPointerCapture(e.pointerId); seekFromEvent(fullBar, e.clientX); });
-  fullBar.addEventListener("pointermove", (e) => { if (seeking) seekFromEvent(fullBar, e.clientX); });
-  fullBar.addEventListener("pointerup", () => { seeking = false; });
-  fullBar.addEventListener("keydown", (e) => {
-    if (!isFinite(audio.duration)) return;
-    if (e.key === "ArrowRight") { audio.currentTime = Math.min(audio.duration, audio.currentTime + 5); e.preventDefault(); }
-    if (e.key === "ArrowLeft") { audio.currentTime = Math.max(0, audio.currentTime - 5); e.preventDefault(); }
-  });
+    
 
   /* audio events */
   audio.addEventListener("timeupdate", () => {
-    if (seeking) return;
     const d = audio.duration || 0;
     const ratio = d ? (audio.currentTime / d) : 0;
-    fullFill.style.width = (ratio * 100) + "%";
-    fullKnob.style.left = (ratio * 100) + "%";
     miniBarFill.style.width = (ratio * 100) + "%";
     if (!mpSeeking) { musicFill.style.width = (ratio * 100) + "%"; musicKnob.style.left = (ratio * 100) + "%"; }
-    fullCur.textContent = fmtTime(audio.currentTime);
     musicCur.textContent = fmtTime(audio.currentTime);
-    fullBar.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
     musicBar.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
   });
   audio.addEventListener("loadedmetadata", () => {
-    fullDur.textContent = fmtTime(audio.duration);
     musicDur.textContent = fmtTime(audio.duration);
     if (pendingSeekId && pendingSeekId === currentId && pendingSeekTime > 2 && pendingSeekTime < (audio.duration || 0) - 2) {
       audio.currentTime = pendingSeekTime;
@@ -912,15 +702,12 @@
     const sub = trackSub(t);
     miniTitle.textContent = t ? t.name : "—";
     miniSub.textContent = sub;
-    fullTitle.textContent = t ? t.name : "—";
-    fullSub.textContent = sub;
     musicTitle.textContent = t ? t.name : "—";
     musicArtist.textContent = sub;
     musicShuffle.classList.toggle("is-on", state.shuffle);
     musicRepeat.classList.toggle("is-on", state.repeat);
     musicPlayer.hidden = !currentId;
     setIcon(miniPlayIcon, isPlaying);
-    setIcon(fullPlayIcon, isPlaying);
     setIcon(musicPlayIcon, isPlaying);
     updateTrackStates();
     updatePlayerArt();
@@ -930,7 +717,7 @@
     const t = state.music.find((x) => x.id === currentId);
     const has = !!(t && t.artwork);
     const refs = [
-      [miniArtImg, miniArtIcon], [fullArtImg, fullArtIcon], [musicArtImg, musicArtIcon]
+      [miniArtImg, miniArtIcon], [musicArtImg, musicArtIcon]
     ];
     refs.forEach(([img, icon]) => {
       if (!img || !icon) return;
@@ -1042,7 +829,6 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     closePop();
-    if (!full.hidden && full.classList.contains("is-open")) closeFull();
     const d = $("confirm");
     if (!d.hidden && d.classList.contains("is-open")) { d.classList.remove("is-open"); setTimeout(() => { d.hidden = true; }, 320); }
   });

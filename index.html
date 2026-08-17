@@ -185,8 +185,8 @@
 
           <!-- empty state -->
           <div class="music__empty" id="musicEmpty" hidden>
-            <div class="empty__title">Your library is empty</div>
-            <div class="empty__text">Add your first song to start listening.</div>
+            <div class="empty__title">No music yet</div>
+            <div class="empty__text">Add a song from your files to get started.</div>
             <button class="btn btn--primary empty__btn" id="emptyAddMusic">
               <span class="btn-add__plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
               Add music
@@ -244,72 +244,7 @@
     </div>
   </div>
 
-  <!-- ============ FULL PLAYER ============ -->
-  <div class="full" id="full" hidden>
-    <div class="full__scrim" id="fullClose"></div>
-    <div class="full__panel" role="dialog" aria-modal="true" aria-label="Now playing">
-      <button class="full__close" id="fullMin" aria-label="Minimize player">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <div class="full__art" id="fullArt">
-        <img class="full__artimg" alt="" hidden />
-        <svg class="full__articon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
-      </div>
-      <div class="full__title" id="fullTitle">—</div>
-      <div class="full__sub" id="fullSub">—</div>
-      <div class="full__bar" id="fullBar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-        <div class="full__track"></div>
-        <div class="full__fill" id="fullFill"></div>
-        <div class="full__knob" id="fullKnob"></div>
-      </div>
-      <div class="full__times"><span id="fullCur">0:00</span><span id="fullDur">0:00</span></div>
-      <div class="full__controls">
-        <button class="full__ctrl" id="fullShuffle" aria-label="Shuffle">
-          <svg viewBox="0 0 24 24"><path d="M4 5h3l3 4M16 5h4v4M4 19h4v-4M16 19h4l-4-4M14 9l3 3-3 3"/></svg>
-        </button>
-        <button class="full__ctrl" id="fullPrev" aria-label="Previous track">
-          <svg viewBox="0 0 24 24"><path d="M7 5v14M19 5L9 12l10 7z"/></svg>
-        </button>
-        <button class="full__ctrl full__play" id="fullPlay" aria-label="Play">
-          <svg id="fullPlayIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
-        </button>
-        <button class="full__ctrl" id="fullNext" aria-label="Next track">
-          <svg viewBox="0 0 24 24"><path d="M17 5v14M5 5l10 7-10 7z"/></svg>
-        </button>
-        <button class="full__ctrl" id="fullRepeat" aria-label="Repeat">
-          <svg viewBox="0 0 24 24"><path d="M7 8a4 4 0 0 1 4-4h6M17 16a4 4 0 0 1-4 4H7M17 4l2 2-2 2M7 20l-2-2 2-2"/></svg>
-        </button>
-      </div>
-      <input type="range" class="full__vol" id="fullVol" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
-    </div>
-  </div>
-
-  <!-- ============ ADD SHEET ============ -->
-  <div class="sheet" id="addSheet" hidden>
-    <div class="sheet__scrim" data-close-sheet></div>
-    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Add music">
-      <div class="sheet__grab"></div>
-      <h2 class="sheet__title" id="addSheetTitle">Add to collection</h2>
-      <div class="details" id="addDetails" hidden>
-        <p class="details__hint">Name your tracks and add artwork (optional).</p>
-        <div class="details__list" id="addDetailsList"></div>
-      </div>
-      <div class="targets" id="addTargets"></div>
-      <div class="newcol" id="newColWrap" hidden>
-        <input id="newColInput" placeholder="Collection name" maxlength="40" autocomplete="off" />
-        <div class="newcol__row">
-          <button class="btn btn--ghost" id="newColCancel">Cancel</button>
-          <button class="btn btn--primary" id="newColCreate">Create</button>
-        </div>
-      </div>
-      <div class="sheet__nav">
-        <button class="btn btn--ghost" id="addSheetBack">Back</button>
-        <button class="btn btn--primary" id="addSheetConfirm">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ CONFIRM DIALOG ============ -->
+   <!-- ============ CONFIRM DIALOG ============ -->
   <div class="dialog" id="confirm" hidden>
     <div class="dialog__scrim" id="confirmScrim"></div>
     <div class="dialog__box" role="dialog" aria-modal="true">
@@ -328,10 +263,9 @@
   </div>
 
   <!-- ============ HIDDEN FILE INPUTS ============ -->
-  <input type="file" id="avatarInput" accept="image/*" hidden />
-  <input type="file" id="artworkInput" accept="image/*" hidden />
-  <input type="file" id="musicFileInput" accept="audio/*" multiple hidden />
-  <input type="file" id="musicFolderInput" accept="audio/*" webkitdirectory directory multiple hidden />
+   <input type="file" id="avatarInput" accept="image/*" hidden />
+   <input type="file" id="musicFileInput" accept="audio/*" multiple hidden />
+   <input type="file" id="musicFolderInput" accept="audio/*" webkitdirectory directory multiple hidden />
 
   <script src="app.js"></script>
 </body>
