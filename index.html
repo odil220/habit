@@ -147,7 +147,7 @@
         <div class="music__stage">
           <!-- now-playing player -->
           <div class="music__player" id="musicPlayer" hidden>
-            <button class="music__art" id="musicArt" aria-label="Open full player">
+            <button class="music__art" id="musicArt" aria-label="Change artwork">
               <img class="music__artimg" alt="" hidden />
               <svg class="music__articon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg>
             </button>
@@ -195,6 +195,7 @@
 
           <!-- compact track list (same screen) -->
           <div class="music__list" id="musicList"></div>
+          <button class="music__clear" id="musicClearAll" hidden>Clear all</button>
         </div>
       </section>
 
@@ -264,6 +265,7 @@
 
   <!-- ============ HIDDEN FILE INPUTS ============ -->
    <input type="file" id="avatarInput" accept="image/*" hidden />
+   <input type="file" id="artworkInput" accept="image/*" hidden />
    <input type="file" id="musicFileInput" accept="audio/*" multiple hidden />
    <input type="file" id="musicFolderInput" accept="audio/*" webkitdirectory directory multiple hidden />
 

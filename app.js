@@ -396,11 +396,13 @@
   const musicNext = $("musicNext");
   const musicShuffle = $("musicShuffle");
   const musicRepeat = $("musicRepeat");
-  const musicEmpty = $("musicEmpty");
-  const musicList = $("musicList");
-  const addMusicBtn = $("addMusicBtn");
-  const musicFileInput = $("musicFileInput");
-  const musicFolderInput = $("musicFolderInput");
+   const musicEmpty = $("musicEmpty");
+   const musicList = $("musicList");
+   const musicClearAll = $("musicClearAll");
+   const addMusicBtn = $("addMusicBtn");
+   const musicFileInput = $("musicFileInput");
+   const musicFolderInput = $("musicFolderInput");
+   const artworkInput = $("artworkInput");
 
   const miniArtImg = $("miniArt").querySelector(".mini__artimg");
   const miniArtIcon = $("miniArt").querySelector(".mini__articon");
@@ -516,12 +518,20 @@
       </div>`;
   }
 
-   function renderLibrary() {
-     const empty = state.music.length === 0;
-     musicEmpty.hidden = !empty;
-     musicList.hidden = empty;
-     musicList.innerHTML = empty ? "" : state.music.map(trackRowHTML).join("");
-   }
+    function renderLibrary() {
+      const empty = state.music.length === 0;
+      musicEmpty.hidden = !empty;
+      musicList.hidden = empty;
+      musicClearAll.hidden = empty;
+      musicList.innerHTML = empty ? "" : state.music.map(trackRowHTML).join("");
+    }
+    function removeAllMusic() {
+      if (!state.music.length) return;
+      state.music.forEach((t) => { try { idbDel(t.id); } catch (e) {}; if (urls[t.id]) { URL.revokeObjectURL(urls[t.id]); delete urls[t.id]; } delete blobs[t.id]; });
+      state.music = [];
+      if (currentId) { audio.pause(); audio.removeAttribute("src"); currentId = null; isPlaying = false; }
+      save(); afterMusicChange(); updateUI();
+    }
    function showLibrary() { renderLibrary(); }
 
    /* ---- view interactions ---- */
@@ -643,8 +653,24 @@
   musicPrev.addEventListener("click", prevTrack);
   musicNext.addEventListener("click", nextTrack);
   musicPlay.addEventListener("click", togglePlay);
-  musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
-  musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
+   musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
+   musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
+   musicArt.addEventListener("click", () => artworkInput.click());
+   artworkInput.addEventListener("change", async () => {
+     const file = artworkInput.files && artworkInput.files[0];
+     artworkInput.value = "";
+     if (!file || !currentId) return;
+     try {
+       const dataUrl = await downscaleImage(file, 512);
+       const t = state.music.find((x) => x.id === currentId);
+       if (!t) return;
+       t.artwork = dataUrl;
+       try { await idbPut({ id: currentId, name: t.file, type: t.type, blob: blobs[currentId], artwork: dataUrl }); } catch (e) {}
+       save(); updateArtDisplay(t); updatePlayerArt();
+       showToast("Artwork updated", "OK", () => {});
+     } catch (e) { showToast("Couldn't load that image", "OK", () => {}); }
+   });
+   musicClearAll.addEventListener("click", () => openConfirm("Remove all songs?", () => removeAllMusic()));
   let mpSeeking = false;
   musicBar.addEventListener("pointerdown", (e) => { mpSeeking = true; musicBar.setPointerCapture(e.pointerId); mpSeek(e); });
   musicBar.addEventListener("pointermove", (e) => { if (mpSeeking) mpSeek(e); });

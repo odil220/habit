@@ -1090,7 +1090,15 @@ body.is-typing .toast {
 .music__play:hover { background: var(--accent-strong); }
 .music__play svg { width: 26px; height: 26px; }
 
+[data-theme="light"] .music__play { background: #1c1c1e; color: #ffffff; }
+[data-theme="light"] .music__play:hover { background: #000000; }
+[data-theme="light"] .mini__btn--play { background: #1c1c1e; color: #ffffff; }
+[data-theme="light"] .mini__btn--play:hover { background: #000000; }
+[data-theme="light"] .track.is-active .track__play { background: #1c1c1e; color: #ffffff; }
+
 .music__list { width: 100%; padding: 0; }
+.music__clear { width: 100%; padding: var(--sp-3) 0; font-size: 13px; color: var(--text-2); background: transparent; border: none; border-top: 1px solid var(--border); cursor: pointer; text-align: left; }
+.music__clear:hover { color: var(--accent-strong); }
 .music__list .track {
   border-bottom: 1px solid var(--border);
   padding: var(--sp-2) 0;
