@@ -531,8 +531,9 @@
       state.music = [];
       if (currentId) { audio.pause(); audio.removeAttribute("src"); currentId = null; isPlaying = false; }
       save(); afterMusicChange(); updateUI();
+      try { window.scrollTo(0, 0); } catch (e) {}
     }
-   function showLibrary() { renderLibrary(); }
+    function showLibrary() { renderLibrary(); }
 
    /* ---- view interactions ---- */
    viewMusic.addEventListener("click", (e) => {
