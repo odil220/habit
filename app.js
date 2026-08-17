@@ -89,7 +89,7 @@
 
   /* ---------- DOM refs ---------- */
   const $ = (id) => document.getElementById(id);
-  const views = { habits: $("view-habits"), note: $("view-note"), music: $("view-music"), sound: $("view-sound") };
+  const views = { habits: $("view-habits"), note: $("view-note"), music: $("view-music") };
   const navItems = Array.from(document.querySelectorAll(".nav__item"));
   const navIndicator = $("navIndicator");
   const veil = document.querySelector(".veil");
@@ -394,21 +394,11 @@
   const musicPlayIcon = $("musicPlayIcon");
   const musicPrev = $("musicPrev");
   const musicNext = $("musicNext");
-   const musicShuffle = $("musicShuffle");
+  const musicShuffle = $("musicShuffle");
   const musicRepeat = $("musicRepeat");
-  const musicSound = $("musicSound");
-  const musicBackBar = $("musicBackBar");
-  const backBtn = $("backBtn");
-
-  const musicChips = $("musicChips");
+  const musicEmpty = $("musicEmpty");
   const musicList = $("musicList");
-  const colEyebrow = $("colEyebrow");
-  const colTitle = $("colTitle");
-  const colSub = $("colSub");
-  const addToCollectionBtn = $("addToCollectionBtn");
   const addMusicBtn = $("addMusicBtn");
-  const musicBack = $("musicBack");
-  const colMore = $("colMore");
   const musicFileInput = $("musicFileInput");
   const musicFolderInput = $("musicFolderInput");
   const artworkInput = $("artworkInput");
@@ -528,72 +518,21 @@
       </div>`;
   }
 
-  function renderLibrary() {
-    showLibrary();
-  }
+   function renderLibrary() {
+     const empty = state.music.length === 0;
+     musicEmpty.hidden = !empty;
+     musicList.hidden = empty;
+     musicList.innerHTML = empty ? "" : state.music.map(trackRowHTML).join("");
+   }
+   function showLibrary() { renderLibrary(); }
 
-  function showLibrary() {
-    currentColId = null;
-    musicBackBar.hidden = true;
-    musicChips.hidden = false;
-    addToCollectionBtn.hidden = true;
-    renderMusicList(state.music, true);
-  }
-
-  function renderMusicList(tracks, showChips) {
-    if (state.music.length === 0) {
-      musicChips.hidden = true;
-      musicList.innerHTML = `
-        <div class="music__empty">
-          <div class="empty__title">Your library is empty</div>
-          <div class="empty__text">Add your first song to start listening.</div>
-          <button class="btn btn--primary empty__btn" id="emptyAddMusic2">Add music</button>
-        </div>`;
-      const b = $("emptyAddMusic2");
-      if (b) b.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
-      return;
-    }
-    musicList.innerHTML = tracks.length
-      ? tracks.map(trackRowHTML).join("")
-      : `<div class="note__statustext" style="padding:var(--sp-4);color:var(--text-2)">No songs in this collection yet.</div>`;
-
-    if (showChips) {
-      const items = [{ id: null, name: "All" }].concat(state.collections);
-      musicChips.innerHTML = items.map((c) => {
-        const active = !c.id || currentColId === c.id;
-        const n = c.id ? state.music.filter((t) => t.collections.includes(c.id)).length : state.music.length;
-        const label = c.id ? escapeHtml(c.name) : "All";
-        return `<button class="chip ${active ? "is-active" : ""}" data-col="${c.id === null ? "" : c.id}" aria-label="${label} (${n})">
-          <span class="chip__label">${label}</span><span class="chip__count">${n}</span>
-        </button>`;
-      }).join("");
-    }
-  }
-
-  function openCollection(id) {
-    const c = state.collections.find((x) => x.id === id);
-    if (!c) { showLibrary(); return; }
-    currentColId = id;
-    musicBackBar.hidden = false;
-    musicChips.hidden = true;
-    addToCollectionBtn.hidden = false;
-    colEyebrow.textContent = "Collection";
-    colTitle.textContent = c.name;
-    const tracks = state.music.filter((t) => t.collections.includes(id));
-    colSub.textContent = tracks.length + " " + (tracks.length === 1 ? "song" : "songs");
-    renderMusicList(tracks, false);
-  }
-
-  /* ---- view interactions ---- */
-  musicBack.addEventListener("click", showLibrary);
-  viewMusic.addEventListener("click", (e) => {
-    const more = e.target.closest(".track__more");
-    const track = e.target.closest(".track");
-    const chip = e.target.closest(".chip");
-    if (more && track) { e.stopPropagation(); openTrackMenu(track.dataset.id, more); return; }
-    if (track) { const id = track.dataset.id; if (id === currentId) togglePlay(); else playTrack(id); return; }
-    if (chip && chip.dataset.col != null) openCollection(chip.dataset.col);
-  });
+   /* ---- view interactions ---- */
+   viewMusic.addEventListener("click", (e) => {
+     const more = e.target.closest(".track__more");
+     const track = e.target.closest(".track");
+     if (more && track) { e.stopPropagation(); openTrackMenu(track.dataset.id, more); return; }
+     if (track) { const id = track.dataset.id; if (id === currentId) togglePlay(); else playTrack(id); return; }
+   });
 
   /* ---- add music flow ---- */
   let addContext = "library"; // "library" or a collection id
@@ -607,9 +546,9 @@
     }
     openPop(anchor, items);
   }
+  const emptyAddMusic = $("emptyAddMusic");
   addMusicBtn.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
-  addToCollectionBtn.addEventListener("click", () => { addContext = currentColId; openAddChoice(addToCollectionBtn); });
-
+  if (emptyAddMusic) emptyAddMusic.addEventListener("click", () => { addContext = "library"; openAddChoice(addMusicBtn); });
   musicFileInput.addEventListener("change", () => { handleSelectedFiles(musicFileInput.files); musicFileInput.value = ""; });
   musicFolderInput.addEventListener("change", () => { handleSelectedFiles(musicFolderInput.files); musicFolderInput.value = ""; });
 
@@ -774,10 +713,7 @@
     }
   }
 
-  function afterMusicChange() {
-    if (currentColId && !musicCollection.hidden) openCollection(currentColId);
-    else renderLibrary();
-  }
+  function afterMusicChange() { renderLibrary(); }
 
   function closeSheet(sheet) {
     sheet.classList.remove("is-open");
@@ -790,40 +726,11 @@
     const t = state.music.find((x) => x.id === id);
     const items = [
       { label: id === currentId && isPlaying ? "Pause" : "Play", icon: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>', onSelect: () => { if (id === currentId) togglePlay(); else playTrack(id); } },
-      { label: t && t.artwork ? "Change artwork" : "Set artwork", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4.5-4.5 3.5 3.5L16 9l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><circle cx="9" cy="8" r="1.6"/></svg>', onSelect: () => { if (t) { trackArtTarget = t; artworkInput.click(); } } },
-      { label: "Add to collection", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>', onSelect: () => openAddSheet("track", null, id) },
       { label: "Remove", danger: true, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M6.5 7l.7 12h9.6l.7-12"/></svg>', onSelect: () => removeTrack(id) },
     ];
     openPop(anchor, items);
   }
-
-  /* ---- collection menu ---- */
-  $("colMore").addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (!currentColId) return;
-    const items = [
-      { label: "Rename", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18 10l-4-4L4 16z"/><path d="M13 5l4 4"/></svg>', onSelect: () => renameCollection(currentColId) },
-      { label: "Delete", danger: true, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M6.5 7l.7 12h9.6l.7-12"/></svg>', onSelect: () => confirmDeleteCollection(currentColId) },
-    ];
-    openPop($("colMore"), items);
-  });
-  function renameCollection(id) {
-    const c = state.collections.find((x) => x.id === id);
-    if (!c) return;
-    const v = window.prompt("Collection name", c.name);
-    if (v && v.trim()) { c.name = v.trim(); save(); openCollection(id); }
-  }
-  function confirmDeleteCollection(id) {
-    const c = state.collections.find((x) => x.id === id);
-    if (!c) return;
-    openConfirm('Delete “' + c.name + '”? The songs stay in your library.', () => {
-      state.collections = state.collections.filter((x) => x.id !== id);
-      state.music.forEach((t) => { t.collections = t.collections.filter((cid) => cid !== id); });
-      save(); showLibrary();
-    });
-  }
-
-  /* =========================================================
+  /* ==========================================================
      PLAYER
      ========================================================= */
   const mini = $("mini");
@@ -913,90 +820,6 @@
   musicArt.addEventListener("click", openFull);
   musicShuffle.addEventListener("click", () => { state.shuffle = !state.shuffle; musicShuffle.classList.toggle("is-on", state.shuffle); save(); });
   musicRepeat.addEventListener("click", () => { state.repeat = !state.repeat; musicRepeat.classList.toggle("is-on", state.repeat); save(); });
-  musicSound.addEventListener("click", () => showView("sound"));
-  backBtn.addEventListener("click", () => {
-    if (currentView === "sound") showView("music");
-    else showView("habits");
-  });
-
-  /* ---- dedicated Sound page (EQ / volume / balance) ---- */
-  const soundPresets = $("soundPresets");
-  const soundVolume = $("soundVolume");
-  const soundVolumeVal = $("soundVolumeVal");
-  const soundBass = $("soundBass");
-  const soundBassVal = $("soundBassVal");
-  const soundTreble = $("soundTreble");
-  const soundTrebleVal = $("soundTrebleVal");
-  const soundBalance = $("soundBalance");
-  const soundBalanceVal = $("soundBalanceVal");
-  let eq = null;
-  const PRESETS = {
-    flat: { bass: 0, treble: 0, balance: 0 },
-    balanced: { bass: 2, treble: 1, balance: 0 },
-    bass: { bass: 6, treble: 0, balance: 0 },
-    vocal: { bass: -2, treble: 4, balance: 0 },
-    treble: { bass: 0, treble: 6, balance: 0 },
-  };
-  function initEQ() {
-    if (eq || !window.AudioContext) return false;
-    try {
-      const C = new (window.OfflineAudioContext ? window.AudioContext : window.AudioContext)();
-      const src = C.createMediaElementSource(audio);
-      const low = C.createBiquadFilter(); low.type = "lowshelf"; low.frequency.value = 120;
-      const high = C.createBiquadFilter(); high.type = "highshelf"; high.frequency.value = 3800;
-      const pan = C.createStereoPanner();
-      const gain = C.createGain();
-      src.connect(low).connect(high).connect(pan).connect(gain).connect(C.destination);
-      eq = { ctx: C, low, high, pan, gain };
-      C.resume().catch(() => {});
-      return true;
-    } catch (e) { eq = null; return false; }
-  }
-  function applyEQ() {
-    if (!eq) return;
-    const q = state.sound.eq;
-    eq.low.gain.setTargetAtTime(q.bass, 0, 0.01);
-    eq.high.gain.setTargetAtTime(q.treble, 0, 0.01);
-    eq.pan.pan.setTargetAtTime(q.balance / 100, 0, 0.01);
-  }
-  function applyPreset(name) {
-    state.sound.preset = name;
-    const v = PRESETS[name] || PRESETS.flat;
-    state.sound.eq = { bass: v.bass, treble: v.treble, balance: v.balance };
-    if (eq) { applyEQ(); }
-    soundBass.value = v.bass; soundBassVal.textContent = v.bass;
-    soundTreble.value = v.treble; soundTrebleVal.textContent = v.treble;
-    soundBalance.value = v.balance; soundBalanceVal.textContent = v.balance;
-    document.querySelectorAll("[data-preset]", soundPresets).forEach((b) => b.classList.toggle("is-active", b.dataset.preset === name));
-    save();
-  }
-  soundPresets.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-preset]");
-    if (!b) return;
-    applyPreset(b.dataset.preset);
-    applyVolume();
-  });
-  soundVolume.addEventListener("input", () => {
-    const v = parseFloat(soundVolume.value);
-    audio.volume = v; state.sound.volume = v; state.volume = v;
-    soundVolumeVal.textContent = Math.round(v * 100);
-    save();
-  });
-  function bindSlider(s, out, key) {
-    out.textContent = s.value;
-    s.addEventListener("input", () => { out.textContent = s.value; state.sound.eq[key] = parseFloat(s.value); if (eq) applyEQ(); save(); });
-  }
-  bindSlider(soundBass, soundBassVal, "bass");
-  bindSlider(soundTreble, soundTrebleVal, "treble");
-  bindSlider(soundBalance, soundBalanceVal, "balance");
-  function applyVolume() {
-    soundVolume.value = String(state.sound.volume);
-    soundVolumeVal.textContent = Math.round(state.sound.volume * 100);
-    audio.volume = state.sound.volume;
-    const p = state.sound.preset;
-    document.querySelectorAll("[data-preset]", soundPresets).forEach((b) => b.classList.toggle("is-active", b.dataset.preset === p));
-  }
-
   let mpSeeking = false;
   musicBar.addEventListener("pointerdown", (e) => { mpSeeking = true; musicBar.setPointerCapture(e.pointerId); mpSeek(e); });
   musicBar.addEventListener("pointermove", (e) => { if (mpSeeking) mpSeek(e); });
@@ -1272,8 +1095,7 @@
       habits: { eyebrow: fmtDate(TODAY), title: "Today's Habits" },
       note: { eyebrow: fmtDate(TODAY), title: "Today's Note" },
        music: { eyebrow: "Your sounds", title: "Music" },
-      sound: { eyebrow: "Audio", title: "Sound" },
-    };
+       };
     const m = map[view];
     $("eyebrow").textContent = m.eyebrow;
     $("title").textContent = m.title;
@@ -1284,7 +1106,6 @@
     if (currentView === "note") { document.body.classList.remove("is-typing"); editor.blur(); }
     if (currentView === "music") showLibrary();
     currentView = view;
-    backBtn.hidden = view !== "sound";
     addMusicBtn.hidden = view !== "music";
     Object.keys(views).forEach((v) => {
       const el = views[v];
@@ -1298,8 +1119,7 @@
     });
     setHeader(view);
     if (view === "note") loadNote();
-    if (view === "music") { if (currentColId) showLibrary(); else renderLibrary(); updateUI(); }
-    if (view === "sound") { initEQ(); applyVolume(); applyEQ(); }
+    if (view === "music") { renderLibrary(); updateUI(); }
     if (view === "habits") renderHabits();
     updateMiniVisibility();
     positionIndicator();
@@ -1335,7 +1155,7 @@
     const params = new URLSearchParams(location.search);
     if (params.get("theme") === "dark" || params.get("theme") === "light") state.theme = params.get("theme");
     if (params.get("accent") === "warm" || params.get("accent") === "cool") state.accent = params.get("accent");
-    if (params.get("view") === "note" || params.get("view") === "music" || params.get("view") === "habits" || params.get("view") === "sound") currentView = params.get("view");
+    if (params.get("view") === "note" || params.get("view") === "music" || params.get("view") === "habits") currentView = params.get("view");
 
     applyThemeChrome();
     setHeader(currentView);

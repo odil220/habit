@@ -1062,8 +1062,19 @@ body.is-typing .toast {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
   width: 100%;
+  min-height: 100vh;
+}
+.music__stage {
+  width: 100%;
+  max-width: 414px;
+  margin: auto;
+  padding: var(--sp-3) var(--sp-4) env(safe-area-inset-bottom);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  box-sizing: border-box;
 }
 .music__head {
   width: 100%;
@@ -1081,9 +1092,9 @@ body.is-typing .toast {
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm);
   text-align: center;
-  padding: var(--sp-5) var(--sp-4) var(--sp-4);
-  width: 100%; max-width: 414px;
-  margin: auto;
+   padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  width: 100%; margin: 0 auto;
+  box-sizing: border-box;
 }
 .music__art {
   width: min(80%, 300px); height: auto; aspect-ratio: 1 / 1;
@@ -1125,36 +1136,13 @@ body.is-typing .toast {
 .music__play:hover { background: var(--accent-strong); }
 .music__play svg { width: 26px; height: 26px; }
 
-/* library: chips + list */
-.music__library { width: 100%; margin-top: var(--sp-3); }
-.music__chips {
-  display: flex; gap: var(--sp-2); overflow-x: auto; scroll-padding-left: var(--sp-4);
-  padding: 0 var(--sp-4) var(--sp-3); margin-bottom: var(--sp-2);
-}
-.music__chips::-webkit-scrollbar { height: 4px; }
-.chip {
-  flex: none; height: 34px; padding: 0 var(--sp-4); border-radius: var(--r-pill);
-  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
-  font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; align-items: center;
-  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-}
-.chip.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.chip .chip__count { margin-left: 6px; font-size: 12px; opacity: 0.85; }
-.chip.is-active .chip__count { color: var(--on-accent); }
-
-.music__list { padding: 0 var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom)); }
+.music__list { width: 100%; padding: 0; }
 .music__list .track {
-  border-radius: 0; border-bottom: 1px solid var(--border);
-  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  padding: var(--sp-2) 0;
 }
 .music__list .track:first-child { border-radius: var(--r-md) var(--r-md) 0 0; }
 .music__list .track:last-child { border-radius: 0 0 var(--r-md) var(--r-md); border-bottom: none; }
-
-/* collection back-bar */
-.music__backbar {
-  display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); padding: 0 var(--sp-4);
-}
-.music__backbar .back { margin: 0; }
 
 /* empty state */
 .music__empty { text-align: center; padding: var(--sp-8) var(--sp-4); }
@@ -1168,13 +1156,7 @@ body.is-typing .toast {
   .music__art, .music__bar, .music__controls { transition: none; }
 }
 
-/* ============ SOUND PAGE ============ */
-.view--sound { min-height: calc(100dvh - env(safe-area-invisible-top)); }
-.sound__stage {
-  max-width: 414px; margin: 0 auto;
-  padding: calc(48px + env(safe-area-inset-top)) var(--sp-4) calc(var(--sp-9) + env(safe-area-inset-bottom) + 60px);
-}
-.sound__group + .sound__group { margin-top: var(--sp-5); }
+/* inline Sound panel controls (reused on the Music screen) */
 .sound__label { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--sp-2); }
 
 .segmented {
@@ -1213,15 +1195,3 @@ body.is-typing .toast {
 
 .sound__row { display: flex; align-items: center; gap: var(--sp-2); }
 .sound__out { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-2); min-width: 36px; text-align: right; }
-
-/* Sound page slide transition */
-@keyframes slideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
-@keyframes slideOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(12px); } }
-.view--sound { animation: slideIn 0.24s var(--ease-out) both; }
-.view--sound[hidden] { display: none; }
-@media (prefers-reduced-motion: reduce) {
-  .view--sound { animation: viewIn 0.01s both; }
-}
-
-/* topbar: back button (Sound) and Add (Music) are visibility-toggled in JS */
-.topbar__controls #backBtn { margin-right: calc(var(--sp-1) * -1); }
