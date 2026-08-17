@@ -398,7 +398,6 @@
   const musicRepeat = $("musicRepeat");
    const musicEmpty = $("musicEmpty");
    const musicList = $("musicList");
-   const musicClearAll = $("musicClearAll");
    const addMusicBtn = $("addMusicBtn");
    const musicFileInput = $("musicFileInput");
    const musicFolderInput = $("musicFolderInput");
@@ -512,8 +511,8 @@
           <div class="track__sub">${escapeHtml(t.file)}</div>
         </div>
         <span class="track__dur">${t.duration ? fmtTime(t.duration) : ""}</span>
-        <button class="track__more" aria-label="More options for ${escapeHtml(t.name)}">
-          <svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/></svg>
+        <button class="track__del" aria-label="Remove ${escapeHtml(t.name)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7M10 11v6M14 11v6M9 7V5a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v2"/></svg>
         </button>
       </div>`;
   }
@@ -522,24 +521,16 @@
       const empty = state.music.length === 0;
       musicEmpty.hidden = !empty;
       musicList.hidden = empty;
-      musicClearAll.hidden = empty;
       musicList.innerHTML = empty ? "" : state.music.map(trackRowHTML).join("");
     }
-    function removeAllMusic() {
-      if (!state.music.length) return;
-      state.music.forEach((t) => { try { idbDel(t.id); } catch (e) {}; if (urls[t.id]) { URL.revokeObjectURL(urls[t.id]); delete urls[t.id]; } delete blobs[t.id]; });
-      state.music = [];
-      if (currentId) { audio.pause(); audio.removeAttribute("src"); currentId = null; isPlaying = false; }
-      save(); afterMusicChange(); updateUI();
-      try { window.scrollTo(0, 0); } catch (e) {}
-    }
+
     function showLibrary() { renderLibrary(); }
 
    /* ---- view interactions ---- */
    viewMusic.addEventListener("click", (e) => {
-     const more = e.target.closest(".track__more");
+     const del = e.target.closest(".track__del");
      const track = e.target.closest(".track");
-     if (more && track) { e.stopPropagation(); openTrackMenu(track.dataset.id, more); return; }
+     if (del && track) { e.stopPropagation(); removeTrack(track.dataset.id); return; }
      if (track) { const id = track.dataset.id; if (id === currentId) togglePlay(); else playTrack(id); return; }
    });
 
@@ -589,15 +580,7 @@
    function afterMusicChange() { renderLibrary(); }
 
   /* ---- track menu ---- */
-  function openTrackMenu(id, anchor) {
-    const t = state.music.find((x) => x.id === id);
-    const items = [
-      { label: id === currentId && isPlaying ? "Pause" : "Play", icon: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>', onSelect: () => { if (id === currentId) togglePlay(); else playTrack(id); } },
-      { label: "Remove", danger: true, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M6.5 7l.7 12h9.6l.7-12"/></svg>', onSelect: () => removeTrack(id) },
-    ];
-    openPop(anchor, items);
-  }
-  /* ==========================================================
+   /* ==========================================================
      PLAYER
      ========================================================= */
   const mini = $("mini");
@@ -670,9 +653,8 @@
        save(); updateArtDisplay(t); updatePlayerArt();
        showToast("Artwork updated", "OK", () => {});
      } catch (e) { showToast("Couldn't load that image", "OK", () => {}); }
-   });
-   musicClearAll.addEventListener("click", () => openConfirm("Remove all songs?", () => removeAllMusic()));
-  let mpSeeking = false;
+    });
+   let mpSeeking = false;
   musicBar.addEventListener("pointerdown", (e) => { mpSeeking = true; musicBar.setPointerCapture(e.pointerId); mpSeek(e); });
   musicBar.addEventListener("pointermove", (e) => { if (mpSeeking) mpSeek(e); });
   musicBar.addEventListener("pointerup", () => { mpSeeking = false; });
